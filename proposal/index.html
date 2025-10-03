@@ -54,9 +54,9 @@
         <h2>Approach</h2>
         <p>
             To tackle this probelm of Distracted Driving, we will use a combination of computer vision techniques and machine learning algorithms to be able to detect and notify when distracted driving is taking place.
-            To do this we will enlist the help of a pre made data.
+            To do this we will enlist the help of a premade data.
             We will use this data set to train a convolutional neural network (CNN) to be able to classify images of drivers into one of these 6 categories.
-            To do this we will do the follow steps on the image data set:
+            To do this we will do the following steps on the image data set:
         </p>
         <h3>Data Preprocessing</h3>
         <ul>
@@ -67,7 +67,7 @@
         <ul>
             <li>Train a basic CNN model that we build from scrath</li>
             <li>Compare our model to a pre weighted model like <a href="https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet18.html" target="_blank" rel="noopener noreferrer">resnet18</a> which is pre trained on the <a href="https://en.wikipedia.org/wiki/ImageNet" target="_blank" rel="noopener noreferrer">ImageNet</a> database. 
-                This model is pre traine don 14 million labeled images. We can then use a concept know as transfer learning, where we start from a CNN that's already been trained on a large dataset and adapt it to our task, by changing the final classificaiton layer with our labels we want to target.  </li>
+                This model is pre trained on 14 million labeled images. We can then use a concept known as transfer learning, where we start from a CNN that's already been trained on a large dataset and adapt it to our task, by changing the final classification layer with our labels we want to target.  </li>
             <li>Then train a lightweight model like MobileNetV3-Small for fast live detection.</li>
         </ul>
         <h3>Training and Evaluation</h3>
@@ -105,9 +105,9 @@
             <li>Yawn</li>
         </ul>
         <p>
-        To implement this project we will use python with the pytorch library to build and train our CNN model based on the 6 states given in our dataset.
+        To implement this project ,we will use Python with the pytorch library to build and train our CNN model based on the 6 states given in our dataset.
         We will also use OpenCV to handle image processing and data augmentation.
-        using a the pre made data set we already have a the data split as follows provided to us:
+        Using a the premade data set we already have the data split as follows provided to us:
         </p>
         <ul>
             <li>Training Set: 11,942 images</li>
@@ -116,14 +116,14 @@
         </ul>
         <p>
         We will use train set and validation set to train and tune our model.
-        While using the Testing set to finally evalute our model on data it hasn't seen before.
+        While using the Testing set to finally evaluate our model on data it hasn't seen before.
         Tunning our model Hyperparameters (Ex: Layers, Epochs, Learning Rate, Batch sizes) to try and reach an accuracy rate of 85% or higher.
-        Once trained we will compare it to our pre weighted models as well to see how they perform.
-        We expect that our pre trained models will out perform our basic CCN model.
+        Once trained we will compare it to our pre-weighed models as well to see how they perform.
+        We expect that our pre-trained models will outperform our basic CNN model.
         </p>
         <p>
-        Next we will test it live by deploying our best final trained model on to an Nvidia Jetson with a camera.
-        Usinng our own faces mimicing the different states of safe/distracted driving and see if our model can accuaratly detect our behavior in real time.
+        Next, we will test it live by deploying our best final trained model on to an Nvidia Jetson with a camera.
+        Using our own faces mimicking  the different states of safe/distracted driving and seeing if our model can accurately detect our behavior in real time.
         </p>
     </section>
     <section class="section" id="refrences"></section>
