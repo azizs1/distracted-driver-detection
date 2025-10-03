@@ -12,6 +12,7 @@
             <li><a href="#problem">Problem Statement</a></li>
             <li><a href="#approach">Approach</a></li>
             <li><a href="#experiments">Experiments</a></li>
+            <li><a href="#refrences">References</a></li>
         </ul>
     </nav>
 
@@ -29,6 +30,14 @@
         <h2>Problem Statement</h2>
         <p>
             Distracted driving is a leading cause of accidents around the world, posing a serious threat to public safety.
+            Distracted driving constibutes to thousands of accidents and deaths each year. Around 3,000 deaths a year are related to distracted driving incidents
+            Infact according to the <a href="https://www.cdc.gov/distracted-driving/about/index.html" target="_blank" rel="noopener noreferrer">CDC</a> "In the United States, over <strong>3,100</strong> people were killed and about <strong>424,000</strong> were injured in crashes involving a distracted driver in 2019."
+            That's nearly <strong>9 people per day</strong>. To put that into perspective, distracted driving kills more Americans than <a href="https://specialtyfuelservices.com/natural-disaster-statistics/" target="_blank" rel="noopener noreferrer">natural disasters</a>
+            and <a href="https://en.wikipedia.org/wiki/List_of_mass_shootings_in_the_United_States_in_2024" target="_blank" rel="noopener noreferrer">mass shootings</a> combined.
+            Yet 68% of Gen-Z drivers admit to using their phones while driving, according to one <a href="https://insurify.com/car-insurance/insights/texting-and-driving-statistics/" target="_blank" rel="noopener noreferrer">survey</a>.
+            So as you can see this is clearly a serious problem that should be addressed.
+        </p>
+        <p>
             Many modern vehicles incorporate systems to ensure drivers are focused by limiting interface access or flashing a warning when
             it detects irregular driving. However, these systems primarily respond to interactions with the vehicle itself and often 
             fail to capture the broader spectrum of risky driving behaviors.
@@ -44,8 +53,35 @@
     <section class="section" id="approach">
         <h2>Approach</h2>
         <p>
-            Describe the technical approach that you plan to employ.
+            To tackle this probelm of Distracted Driving, we will use a combination of computer vision techniques and machine learning algorithms to be able to detect and notify when distracted driving is taking place.
+            To do this we will enlist the help of a pre made data.
+            We will use this data set to train a convolutional neural network (CNN) to be able to classify images of drivers into one of these 6 categories.
+            To do this we will do the follow steps on the image data set:
         </p>
+        <h3>Data Preprocessing</h3>
+        <ul>
+            <li>Normalize pixel values</li>
+            <li>Augment data to increase diversity (e.g: rotations, flips)</li>
+        </ul>
+        <h3>Model Selection</h3>
+        <ul>
+            <li>Train a basic CNN model that we build from scrath</li>
+            <li>Compare our model to a pre weighted model like <a href="https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet18.html" target="_blank" rel="noopener noreferrer">resnet18</a> which is pre trained on the <a href="https://en.wikipedia.org/wiki/ImageNet" target="_blank" rel="noopener noreferrer">ImageNet</a> database. 
+                This model is pre traine don 14 million labeled images. We can then use a concept know as transfer learning, where we start from a CNN that's already been trained on a large dataset and adapt it to our task, by changing the final classificaiton layer with our labels we want to target.  </li>
+            <li>Then train a lightweight model like MobileNetV3-Small for fast live detection.</li>
+        </ul>
+        <h3>Training and Evaluation</h3>
+        <ul>
+            <li>Split the dataset into training, validation, and test sets</li>
+            <li>Use cross-entropy loss and Adam optimizer for training</li>
+            <li>Evaluate model performance using accuracy, precision, recall, and F1-score</li>
+        </ul>
+        <h3>Deployment</h3>
+        <ul>
+            <li>Load the trained model onto an NVIDIA Jetson with a camera connected.</li>
+            <li>Run a simple script to do live predictions while we act out safe vs. distracted behaviors.</li>
+            <li>Show the predicted label on screen and trigger a basic alert during unsafe moments.</li>
+        </ul>
     </section>
 
     <section class="section" id="experiments">
@@ -57,7 +93,85 @@
             description of the procedure that you will follow. Provide a list of experiments that you will perform.
             Describe what you expect the experiments to reveal, or what is uncertain about the potential
             outcomes.
+            For this project we will use the  <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">Driver Inattention Detection Dataset</a> from Kaggle.
+            This data set contains roughly 15,000 Gray Scale images of drivers in 6 different states:
+        </p>
+        <ul>
+            <li>Safe Driving</li>
+            <li>Distracted Driving</li>
+            <li>Dangerous Driving</li>
+            <li>Sleepy Driving</li>
+            <li>Drinking</li>
+            <li>Yawn</li>
+        </ul>
+        <p>
+        To implement this project we will use python with the pytorch library to build and train our CNN model based on the 6 states given in our dataset.
+        We will also use OpenCV to handle image processing and data augmentation.
+        using a the pre made data set we already have a the data split as follows provided to us:
+        </p>
+        <ul>
+            <li>Training Set: 11,942 images</li>
+            <li>Validation Set: 1,922 images</li>
+            <li>Test Set: 985 images</li>
+        </ul>
+        <p>
+        We will use train set and validation set to train and tune our model.
+        While using the Testing set to finally evalute our model on data it hasn't seen before.
+        Tunning our model Hyperparameters (Ex: Layers, Epochs, Learning Rate, Batch sizes) to try and reach an accuracy rate of 85% or higher.
+        Once trained we will compare it to our pre weighted models as well to see how they perform.
+        We expect that our pre trained models will out perform our basic CCN model.
+        </p>
+        <p>
+        Next we will test it live by deploying our best final trained model on to an Nvidia Jetson with a camera.
+        Usinng our own faces mimicing the different states of safe/distracted driving and see if our model can accuaratly detect our behavior in real time.
         </p>
     </section>
+    <section class="section" id="refrences"></section>
+        <h2>References</h2>
+        <ul>
+            <li>
+                Zeyad Mashhour, "Driver Inattention Detection Dataset," Kaggle, 2020.
+                <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">
+                    https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset
+                </a>.
+            </li>
+            <li>
+                PyTorch, "torchvision.models.resnet18," PyTorch Documentation.
+                <a href="https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet18.html" target="_blank" rel="noopener noreferrer">
+                    https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet18.html
+                </a>. 
+            </li>
+            <li>
+                ImageNet, "ImageNet," Wikipedia. 
+                <a href="https://en.wikipedia.org/wiki/ImageNet" target="_blank" rel="noopener noreferrer">
+                    https://en.wikipedia.org/wiki/ImageNet
+                </a>.
+            </li>
+            <li>
+                CDC, "Distracted Driving," Centers for Disease Control and Prevention, 2023.
+                <a href="https://www.cdc.gov/distracted-driving/about/index.html" target="_blank" rel="noopener noreferrer">
+                    https://www.cdc.gov/distracted-driving/about/index.html
+                </a>.
+            </li>
+            <li>
+                Insurify, "Texting and Driving Statistics," Insurify, 2023.
+                <a href="https://insurify.com/car-insurance/insights/texting-and-driving-statistics/" target="_blank" rel="noopener noreferrer">
+                    https://insurify.com/car-insurance/insights/texting-and-driving-statistics/
+                </a>.
+            </li>
+            <li>
+                Specialty Fuel Services, "Natural Disaster Statistics," Specialty Fuel Services, 2023.
+                <a href="https://specialtyfuelservices.com/natural-disaster-statistics/" target="_blank" rel="noopener noreferrer">
+                    https://specialtyfuelservices.com/natural-disaster-statistics/
+                </a>.
+            </li>
+            <li>
+                Wikipedia, "List of mass shootings in the United States in 2024," Wikipedia, 2024.
+                <a href="https://en.wikipedia.org/wiki/List_of_mass_shootings_in_the_United_States_in_2024" target="_blank" rel="noopener noreferrer">
+                    https://en.wikipedia.org/wiki/List_of_mass_shootings_in_the_United_States_in_2024
+                </a>.
+            </li>
+        </ul>
+        </section>
 </body>
 </html>
