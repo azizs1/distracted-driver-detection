@@ -12,7 +12,7 @@
             <li><a href="#problem">Problem Statement</a></li>
             <li><a href="#approach">Approach</a></li>
             <li><a href="#experiments">Experiments</a></li>
-            <li><a href="#refrences">References</a></li>
+            <li><a href="#references">References</a></li>
         </ul>
     </nav>
 
@@ -30,12 +30,11 @@
         <h2>Problem Statement</h2>
         <p>
             Distracted driving is a leading cause of accidents around the world, posing a serious threat to public safety.
-            Distracted driving constibutes to thousands of accidents and deaths each year. Around 3,000 deaths a year are related to distracted driving incidents
-            Infact according to the <a href="https://www.cdc.gov/distracted-driving/about/index.html" target="_blank" rel="noopener noreferrer">CDC</a> "In the United States, over <strong>3,100</strong> people were killed and about <strong>424,000</strong> were injured in crashes involving a distracted driver in 2019."
-            That's nearly <strong>9 people per day</strong>. To put that into perspective, distracted driving kills more Americans than <a href="https://specialtyfuelservices.com/natural-disaster-statistics/" target="_blank" rel="noopener noreferrer">natural disasters</a>
-            and <a href="https://en.wikipedia.org/wiki/List_of_mass_shootings_in_the_United_States_in_2024" target="_blank" rel="noopener noreferrer">mass shootings</a> combined.
-            Yet 68% of Gen-Z drivers admit to using their phones while driving, according to one <a href="https://insurify.com/car-insurance/insights/texting-and-driving-statistics/" target="_blank" rel="noopener noreferrer">survey</a>.
-            So as you can see this is clearly a serious problem that should be addressed.
+            According to the Centers for Disease Control and Prevention (CDC), over 3,100 individuals were killed and 
+            approximately 424,000 were injured in motor vehicle crashes involving a distracted driver in the United States in 2019 [1]. 
+            Equating to almost nine deaths per day, there is a very present need to solve this problem.
+            Despite this, studies indicate that 68% of Gen Z drivers admit to using mobile devices while operating a vehicle [2], 
+            highlighting a disconnect between the awareness of the risk and the actual driving behavior.
         </p>
         <p>
             Many modern vehicles incorporate systems to ensure drivers are focused by limiting interface access or flashing a warning when
@@ -115,63 +114,66 @@
             <li>Test Set: 985 images</li>
         </ul>
         <p>
-        We will use train set and validation set to train and tune our model.
-        While using the Testing set to finally evaluate our model on data it hasn't seen before.
-        Tunning our model Hyperparameters (Ex: Layers, Epochs, Learning Rate, Batch sizes) to try and reach an accuracy rate of 85% or higher.
-        Once trained we will compare it to our pre-weighed models as well to see how they perform.
-        We expect that our pre-trained models will outperform our basic CNN model.
+            We will use train set and validation set to train and tune our model.
+            While using the Testing set to finally evaluate our model on data it hasn't seen before.
+            Tunning our model Hyperparameters (Ex: Layers, Epochs, Learning Rate, Batch sizes) to try and reach an accuracy rate of 85% or higher.
+            Once trained we will compare it to our pre-weighed models as well to see how they perform.
+            We expect that our pre-trained models will outperform our basic CNN model.
         </p>
         <p>
-        Next, we will test it live by deploying our best final trained model on to an Nvidia Jetson with a camera.
-        Using our own faces mimicking  the different states of safe/distracted driving and seeing if our model can accurately detect our behavior in real time.
+            Next, we will test it live by deploying our best final trained model on to an Nvidia Jetson with a camera.
+            Using our own faces mimicking  the different states of safe/distracted driving and seeing if our model can accurately detect our behavior in real time.
         </p>
     </section>
-    <section class="section" id="refrences"></section>
+    
+    <section class="section" id="references">
         <h2>References</h2>
-        <ul>
+        <ol class="ieee-references">
             <li>
-                Zeyad Mashhour, "Driver Inattention Detection Dataset," Kaggle, 2020.
-                <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">
-                    https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset
-                </a>.
-            </li>
-            <li>
-                PyTorch, "torchvision.models.resnet18," PyTorch Documentation.
-                <a href="https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet18.html" target="_blank" rel="noopener noreferrer">
-                    https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet18.html
-                </a>. 
-            </li>
-            <li>
-                ImageNet, "ImageNet," Wikipedia. 
-                <a href="https://en.wikipedia.org/wiki/ImageNet" target="_blank" rel="noopener noreferrer">
-                    https://en.wikipedia.org/wiki/ImageNet
-                </a>.
-            </li>
-            <li>
-                CDC, "Distracted Driving," Centers for Disease Control and Prevention, 2023.
+                Centers for Disease Control and Prevention, “Distracted Driving,” *CDC*, 2023. [Online]. Available: 
                 <a href="https://www.cdc.gov/distracted-driving/about/index.html" target="_blank" rel="noopener noreferrer">
                     https://www.cdc.gov/distracted-driving/about/index.html
-                </a>.
+                </a>
             </li>
             <li>
-                Insurify, "Texting and Driving Statistics," Insurify, 2023.
+                Insurify, “Texting and Driving Statistics,” *Insurify*, 2023. [Online]. Available: 
                 <a href="https://insurify.com/car-insurance/insights/texting-and-driving-statistics/" target="_blank" rel="noopener noreferrer">
                     https://insurify.com/car-insurance/insights/texting-and-driving-statistics/
-                </a>.
+                </a>
             </li>
             <li>
-                Specialty Fuel Services, "Natural Disaster Statistics," Specialty Fuel Services, 2023.
+                Z. Mashhour, “Driver Inattention Detection Dataset,” *Kaggle*, 2020. [Online]. Available: 
+                <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">
+                    https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset
+                </a>
+            </li>
+            <li>
+                PyTorch, “torchvision.models.resnet18,” *PyTorch Documentation*. [Online]. Available: 
+                <a href="https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet18.html" target="_blank" rel="noopener noreferrer">
+                    https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet18.html
+                </a>
+            </li>
+            <li>
+                “ImageNet,” *Wikipedia*. [Online]. Available: 
+                <a href="https://en.wikipedia.org/wiki/ImageNet" target="_blank" rel="noopener noreferrer">
+                    https://en.wikipedia.org/wiki/ImageNet
+                </a>
+            </li>
+            <li>
+                Specialty Fuel Services, “Natural Disaster Statistics,” *Specialty Fuel Services*, 2023. [Online]. Available: 
                 <a href="https://specialtyfuelservices.com/natural-disaster-statistics/" target="_blank" rel="noopener noreferrer">
                     https://specialtyfuelservices.com/natural-disaster-statistics/
-                </a>.
+                </a>
             </li>
             <li>
-                Wikipedia, "List of mass shootings in the United States in 2024," Wikipedia, 2024.
+                “List of mass shootings in the United States in 2024,” *Wikipedia*, 2024. [Online]. Available: 
                 <a href="https://en.wikipedia.org/wiki/List_of_mass_shootings_in_the_United_States_in_2024" target="_blank" rel="noopener noreferrer">
                     https://en.wikipedia.org/wiki/List_of_mass_shootings_in_the_United_States_in_2024
-                </a>.
+                </a>
             </li>
-        </ul>
-        </section>
+        </ol>
+    </section>
+
+
 </body>
 </html>

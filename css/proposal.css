@@ -122,3 +122,28 @@ body {
 .side-nav a:hover {
     color: #222;
 }
+
+.ieee-references {
+    list-style-type: decimal;
+    padding-left: 1.5rem;
+    max-width: 75%;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 0.95rem;
+    color: #444;
+}
+
+.ieee-references li {
+    margin-bottom: 1em;
+    line-height: 1.6;
+}
+
+.ieee-references a {
+    color: #3498db;
+    text-decoration: none;
+    word-break: break-word;
+}
+
+.ieee-references a:hover {
+    text-decoration: underline;
+}
