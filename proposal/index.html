@@ -52,10 +52,10 @@
     <section class="section" id="approach">
         <h2>Approach</h2>
         <p>
-            To tackle this probelm of Distracted Driving, we will use a combination of computer vision techniques and machine learning algorithms to be able to detect and notify when distracted driving is taking place.
-            To do this we will enlist the help of a premade data.
-            We will use this data set to train a convolutional neural network (CNN) to be able to classify images of drivers into one of these 6 categories.
-            To do this we will do the following steps on the image data set:
+            The technical approach for this problem involves mainly deep learning using convolution neural networks (CNNs).
+            Using a dedicated <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">dataset</a> with labelled frame data
+            to train a CNN, we aim to be able to classify images of drivers into one of the 6 available categories to determine when distracted driving is occurring.
+            An outline of this approach is as follows:
         </p>
         <h3>Data Preprocessing</h3>
         <ul>
@@ -64,10 +64,10 @@
         </ul>
         <h3>Model Selection</h3>
         <ul>
-            <li>Train a basic CNN model that we build from scrath</li>
+            <li>Train a basic custom-built CNN model</li>
             <li>Compare our model to a pre weighted model like <a href="https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet18.html" target="_blank" rel="noopener noreferrer">resnet18</a> which is pre trained on the <a href="https://en.wikipedia.org/wiki/ImageNet" target="_blank" rel="noopener noreferrer">ImageNet</a> database. 
-                This model is pre trained on 14 million labeled images. We can then use a concept known as transfer learning, where we start from a CNN that's already been trained on a large dataset and adapt it to our task, by changing the final classification layer with our labels we want to target.  </li>
-            <li>Then train a lightweight model like MobileNetV3-Small for fast live detection.</li>
+                This model is pre trained on 14 million labeled images. We can then use transfer learning with this model to change the final classification layer to suit our labels</li>
+            <li>For running on the Jetson Nano, a lightweight model (i.e. MobileNetV3-Small), can be trained for faster live detection.</li>
         </ul>
         <h3>Training and Evaluation</h3>
         <ul>
@@ -92,8 +92,11 @@
             description of the procedure that you will follow. Provide a list of experiments that you will perform.
             Describe what you expect the experiments to reveal, or what is uncertain about the potential
             outcomes.
-            For this project we will use the  <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">Driver Inattention Detection Dataset</a> from Kaggle.
-            This data set contains roughly 15,000 Gray Scale images of drivers in 6 different states:
+        </p>
+        <h3>Dataset</h3>
+        <p>
+            For this project we will use the  <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">Driver Inattention Detection Dataset</a> from Kaggle, 
+            containing nearly 15,000 grayscale images of drivers in 6 different states:
         </p>
         <ul>
             <li>Safe Driving</li>
@@ -103,16 +106,37 @@
             <li>Drinking</li>
             <li>Yawn</li>
         </ul>
-        <p>
-        To implement this project ,we will use Python with the pytorch library to build and train our CNN model based on the 6 states given in our dataset.
-        We will also use OpenCV to handle image processing and data augmentation.
-        Using a the premade data set we already have the data split as follows provided to us:
-        </p>
+        <p>This dataset is split into three different sets: training, validation, and test. Each set contains the following quantity of test points:</p>
         <ul>
             <li>Training Set: 11,942 images</li>
             <li>Validation Set: 1,922 images</li>
             <li>Test Set: 985 images</li>
         </ul>
+        <p>Below are sample frames extracted from the dataset.</p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/man_focused.jpg" alt="Safe Driving">
+                <figcaption>Safe Driving</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/man_drinking.jpg" alt="Drinking">
+                <figcaption>Drinking</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/man_on_phone.jpg" alt="Distracted Driving">
+                <figcaption>Distracted Driving</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/man_sleeping.jpg" alt="Sleepy Driver">
+                <figcaption>Sleepy Driver</figcaption>
+            </figure>
+        </div>
+        <h3>Experiments</h3>
+        <p>
+        To implement this project ,we will use Python with the pytorch library to build and train our CNN model based on the 6 states given in our dataset.
+        We will also use OpenCV to handle image processing and data augmentation.
+        Using a the premade data set we already have the data split as follows provided to us:
+        </p>
         <p>
             We will use train set and validation set to train and tune our model.
             While using the Testing set to finally evaluate our model on data it hasn't seen before.
@@ -141,39 +165,7 @@
                     https://insurify.com/car-insurance/insights/texting-and-driving-statistics/
                 </a>
             </li>
-            <li>
-                Z. Mashhour, “Driver Inattention Detection Dataset,” *Kaggle*, 2020. [Online]. Available: 
-                <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">
-                    https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset
-                </a>
-            </li>
-            <li>
-                PyTorch, “torchvision.models.resnet18,” *PyTorch Documentation*. [Online]. Available: 
-                <a href="https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet18.html" target="_blank" rel="noopener noreferrer">
-                    https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet18.html
-                </a>
-            </li>
-            <li>
-                “ImageNet,” *Wikipedia*. [Online]. Available: 
-                <a href="https://en.wikipedia.org/wiki/ImageNet" target="_blank" rel="noopener noreferrer">
-                    https://en.wikipedia.org/wiki/ImageNet
-                </a>
-            </li>
-            <li>
-                Specialty Fuel Services, “Natural Disaster Statistics,” *Specialty Fuel Services*, 2023. [Online]. Available: 
-                <a href="https://specialtyfuelservices.com/natural-disaster-statistics/" target="_blank" rel="noopener noreferrer">
-                    https://specialtyfuelservices.com/natural-disaster-statistics/
-                </a>
-            </li>
-            <li>
-                “List of mass shootings in the United States in 2024,” *Wikipedia*, 2024. [Online]. Available: 
-                <a href="https://en.wikipedia.org/wiki/List_of_mass_shootings_in_the_United_States_in_2024" target="_blank" rel="noopener noreferrer">
-                    https://en.wikipedia.org/wiki/List_of_mass_shootings_in_the_United_States_in_2024
-                </a>
-            </li>
         </ol>
     </section>
-
-
 </body>
 </html>

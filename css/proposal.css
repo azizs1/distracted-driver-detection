@@ -147,3 +147,32 @@ body {
 .ieee-references a:hover {
     text-decoration: underline;
 }
+
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 2rem;
+    max-width: 75%;
+    margin: 2rem auto;
+    text-align: center;
+}
+
+.image-grid figure {
+    margin: 0;
+}
+
+.image-grid img {
+    width: 100%;
+    height: auto;
+    transition: transform 0.3s ease;
+}
+
+.image-grid img:hover {
+    transform: scale(1.03);
+}
+
+.image-grid figcaption {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #555;
+}
