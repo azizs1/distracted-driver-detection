@@ -52,34 +52,76 @@
     <section class="section" id="approach">
         <h2>Approach</h2>
         <p>
-            The technical approach for this problem involves mainly deep learning using convolution neural networks (CNNs).
+            For this problem, we will attempt two different technical approaches: deep learning techniques and optical flow analysis. The approach differs for each with different
+            success criteria for each method.
+        </p>
+        <h3>Deep Learning</h3>
+        <p>
             Using a dedicated <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">dataset</a> with labelled frame data
             to train a CNN, we aim to be able to classify images of drivers into one of the 6 available categories to determine when distracted driving is occurring.
             An outline of this approach is as follows:
         </p>
-        <h3>Data Preprocessing</h3>
+        <h4>Data Preprocessing</h4>
         <ul>
-            <li>Normalize pixel values</li>
-            <li>Augment data to increase diversity (e.g: rotations, flips)</li>
+            <li>Normalize pixel values.</li>
+            <li>Augment data to increase diversity (e.g rotations, flips).</li>
+            <li>These image operations will be performed with OpenCV.</li>
         </ul>
-        <h3>Model Selection</h3>
+        <h4>Model Selection</h4>
         <ul>
-            <li>Train a basic custom-built CNN model</li>
+            <li>Train a basic custom-built CNN model using PyTorch to define the architecture.</li>
             <li>Compare our model to a pre weighted model like <a href="https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet18.html" target="_blank" rel="noopener noreferrer">resnet18</a> which is pre trained on the <a href="https://en.wikipedia.org/wiki/ImageNet" target="_blank" rel="noopener noreferrer">ImageNet</a> database. 
                 This model is pre trained on 14 million labeled images. We can then use transfer learning with this model to change the final classification layer to suit our labels</li>
             <li>For running on the Jetson Nano, a lightweight model (i.e. MobileNetV3-Small), can be trained for faster live detection.</li>
         </ul>
-        <h3>Training and Evaluation</h3>
+        <h4>Training and Evaluation</h4>
         <ul>
-            <li>Split the dataset into training, validation, and test sets</li>
-            <li>Use cross-entropy loss and Adam optimizer for training</li>
-            <li>Evaluate model performance using accuracy, precision, recall, and F1-score</li>
+            <li>Split the dataset into training, validation, and test sets.</li>
+            <li>Use cross-entropy loss and Adam optimizer for training.</li>
+            <li>Evaluate model performance using accuracy, precision, recall, and f1-score.</li>
         </ul>
-        <h3>Deployment</h3>
+        <h4>Deployment</h4>
         <ul>
             <li>Load the trained model onto an NVIDIA Jetson with a camera connected.</li>
             <li>Run a simple script to do live predictions while we act out safe vs. distracted behaviors.</li>
             <li>Show the predicted label on screen and trigger a basic alert during unsafe moments.</li>
+        </ul>
+        <h3>Optical Flow</h3>
+        <p>
+            As an alternative to deep learning, we implement a motion-based approach using optical flow to detect patterns of movement that may indicate distracted or unsafe driving behaviors. This method analyzes frame-to-frame changes in video captured from a live camera feed, allowing us to track hand gestures, head movement, and signs of fatigue without relying on labeled image classification.
+        </p>
+        <h4>Motion Estimation</h4>
+        <ul>
+            <li>Capture consecutive frames from a live video feed using OpenCV.</li>
+            <li>Convert frames to gray-scale for efficient processing.</li>
+            <li>Compute optical flow using Lucas-Kanade methods to estimate pixel-level motion vectors.</li>
+        </ul>
+
+        <h4>Behavior Detection</h4>
+        <ul>
+            <li>Define regions of interest (e.g. face, hands) using bounding boxes.</li>
+            <li>
+                Track motion magnitude and direction within these regions to identify behaviors:
+                <ul>
+                <li>Hand movement would likely be the flow near the lower frame region, closer to the wheel.</li>
+                <li>Head movement would be a consistent flow near face region, closer to the upper portion of the frame.</li>
+                <li>Fatigue would be minimal and slow motion over time.</li>
+                </ul>
+            </li>
+            <li>Set thresholds for motion magnitude and duration to indicate when the behaviors are identified.</li>
+        </ul>
+
+        <h4>Evaluation</h4>
+        <ul>
+            <li>Simulate unsafe behaviors and record flow maps.</li>
+            <li>Assess reliability based on accuracy and responsiveness.</li>
+        </ul>
+
+        <h4>Deployment</h4>
+        <ul>
+            <li>Run the optical flow script on the NVIDIA Jetson Nano with a connected camera.</li>
+            <li>Process live video in real time and visualize flow vectors on screen.</li>
+            <li>Log when motion patterns match unsafe behavior criteria.</li>
         </ul>
     </section>
 
@@ -127,8 +169,8 @@
                 <figcaption>Distracted Driving</figcaption>
             </figure>
             <figure>
-                <img src="./static/man_sleeping.jpg" alt="Sleepy Driver">
-                <figcaption>Sleepy Driver</figcaption>
+                <img src="./static/man_sleeping.jpg" alt="Sleepy Driving">
+                <figcaption>Sleepy Driving</figcaption>
             </figure>
         </div>
         <h3>Experiments</h3>
