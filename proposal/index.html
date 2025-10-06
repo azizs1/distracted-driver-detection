@@ -70,9 +70,9 @@
         <h4>Model Selection</h4>
         <ul>
             <li>Train a basic custom-built CNN model using PyTorch to define the architecture.</li>
-            <li>Compare our model to a pre weighted model like <a href="https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet18.html" target="_blank" rel="noopener noreferrer">resnet18</a> which is pre trained on the <a href="https://en.wikipedia.org/wiki/ImageNet" target="_blank" rel="noopener noreferrer">ImageNet</a> database. 
-                This model is pre trained on 14 million labeled images. We can then use transfer learning with this model to change the final classification layer to suit our labels</li>
-            <li>For running on the Jetson Nano, a lightweight model (i.e. MobileNetV3-Small), can be trained for faster live detection.</li>
+            <li>Compare our model to a pre-weighted model like <a href="https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet18.html" target="_blank" rel="noopener noreferrer">resnet18</a> which is pretrained on the <a href="https://en.wikipedia.org/wiki/ImageNet" target="_blank" rel="noopener noreferrer">ImageNet</a> database. 
+                This model is pre-trained on 14 million labeled images. We can then use transfer learning with this model to change the final classification layer to suit our labels.</li>
+            <li>This model will also be tested for live detection.</li>
         </ul>
         <h4>Training and Evaluation</h4>
         <ul>
@@ -82,11 +82,11 @@
         </ul>
         <h4>Deployment</h4>
         <ul>
-            <li>Load the trained model onto an NVIDIA Jetson with a camera connected.</li>
+            <li>Load the trained model onto an NVIDIA Jetson Nano with a camera connected.</li>
             <li>Run a simple script to do live predictions while we act out safe vs. distracted behaviors.</li>
             <li>Show the predicted label on screen and trigger a basic alert during unsafe moments.</li>
         </ul>
-        <h3>Optical Flow</h3>
+        <h3>Optical Flow Analysis</h3>
         <p>
             As an alternative to deep learning, we implement a motion-based approach using optical flow to detect patterns of movement that may indicate distracted or unsafe driving behaviors. This method analyzes frame-to-frame changes in video captured from a live camera feed, allowing us to track hand gestures, head movement, and signs of fatigue without relying on labeled image classification.
         </p>
@@ -137,7 +137,7 @@
         </p>
         <h3>Dataset</h3>
         <p>
-            For this project we will use the  <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">Driver Inattention Detection Dataset</a> from Kaggle, 
+            For this project we will use the <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">Driver Inattention Detection Dataset</a> from Kaggle, 
             containing nearly 15,000 grayscale images of drivers in 6 different states:
         </p>
         <ul>
@@ -175,20 +175,38 @@
         </div>
         <h3>Experiments</h3>
         <p>
-        To implement this project ,we will use Python with the pytorch library to build and train our CNN model based on the 6 states given in our dataset.
-        We will also use OpenCV to handle image processing and data augmentation.
-        Using a the premade data set we already have the data split as follows provided to us:
+            Our ultimate goal will be real-time identification of dangerous driving behaviors, and we will attempt accomplishing this in three different ways:
         </p>
+        <ul>
+            <li>Deep learning using a pre-weighted model (i.e. resnet18)</li>
+            <li>Deep learning using a custom-built CNN</li>
+            <li>Optical flow analysis</li>
+        </ul>
+        <h4>Deep Learning (Custom CNN)</h4>
         <p>
-            We will use train set and validation set to train and tune our model.
-            While using the Testing set to finally evaluate our model on data it hasn't seen before.
-            Tunning our model Hyperparameters (Ex: Layers, Epochs, Learning Rate, Batch sizes) to try and reach an accuracy rate of 85% or higher.
-            Once trained we will compare it to our pre-weighed models as well to see how they perform.
-            We expect that our pre-trained models will outperform our basic CNN model.
+            The dataset used here will be the <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">Driver Inattention Detection Dataset</a> 
+            identified earlier in the proposal to train a model using PyTorch. This dataset is already split with 80% dedicated to training and 20% for testing and validation. We hope to achieve at least 85% test accuracy through the tuning of model hyperparameters
+            to consider this approach a successful one. Additionally, we want to ensure that this can be set up as a lightweight model to be used in real-time. Performance concerns may also impact overall accuracy when used in
+            a realistic scenario.
         </p>
+        <h4>Deep Learning (Pre-weighted Model)</h4>
         <p>
-            Next, we will test it live by deploying our best final trained model on to an Nvidia Jetson with a camera.
-            Using our own faces mimicking  the different states of safe/distracted driving and seeing if our model can accurately detect our behavior in real time.
+            The same dataset that was used for the custom CNN will be used here. We expect that this model will be far more successful than the custom CNN, but we will continue to aim for 85% test accuracy after the transfer
+            learning phase. The resnet18 model is fairly lightweight so it should theoretically perform well in real-time. A comparison analysis will be performed between these two deep learning
+            approaches to observe how each differs and the results that they achieve.
+        </p>
+        <h4>Optical Flow Analysis</h4>
+        <p>
+            This experiment will focus on using optical flow to detect motion-based indicators of distracted driving, such as hand movement, head turning, and signs of fatigue. Unlike the deep learning methods, this approach does not rely on labeled image classification but instead uses frame-to-frame motion estimation to detect behavior.
+            We will simulate these behaviors while parked and log the system’s ability to detect them accurately. Success will be measured by the system’s responsiveness and its ability to correctly identify motion-based behaviors without excessive false positives. This method will also be evaluated for its feasibility on the NVIDIA Jetson Nano in terms of real-time performance and resource usage.
+        </p>
+        </p>
+        <h4>Final Assessment</h4>
+        <p>
+            A comparison of these three methods will be performed at the conclusion of the implementations of each of them and be assessed based on the reliability of each method in 
+            a real-time usecase, as well as the accuracy of each of these methods. Comparing deep learning methods with the optical flow analysis method can allow for a greater understanding of the strengths and weakness
+            of each of these methods in the context of overall accuracy, as well as performance in a real-time scenario. When performing real-time testing, we will set up the camera and NVIDIA Jetson Nano system in our own cars 
+            and evaluate the number of behaviors that are able to be picked up by each method.
         </p>
     </section>
     
