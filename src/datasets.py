@@ -6,6 +6,7 @@ import numpy as np
 from PIL import Image
 from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
+from torch.utils.data.sampler import WeightedRandomSampler
 from torchvision import transforms
 from collections import Counter
 from tqdm import tqdm
@@ -88,6 +89,12 @@ def get_image_means_stds(folder):
     args:
         folder (string): Path to the dataset folder.
     """
+    if os.path.exists("data/mean.npy") and os.path.exists("data/std.npy"):
+        print("==> Loading saved mean and std..")  
+        mean = np.load("data/mean.npy")
+        std = np.load("data/std.npy")
+        return mean, std
+    
     # Code refrences https://stackoverflow.com/questions/58151507/why-pytorch-officially-use-mean-0-485-0-456-0-406-and-std-0-229-0-224-0-2?utm_source=chatgpt.com
     dataset = CustomDataset(folder, transform=transforms.ToTensor())
     full_loader = DataLoader(dataset, shuffle=False, num_workers=os.cpu_count())
@@ -139,6 +146,26 @@ def show_samples(ds, k=6, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     plt.tight_layout()
     plt.show()
 
+def load_datasets(batch_size=8, image_size=224, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], num_workers=4):
+    """ Loads datasets"""
+    train_dataset = CustomDataset("data/train", transform=get_transforms(img_size=image_size, mean=mean, std=std, augment=True))
+    val_dataset = CustomDataset("data/valid", transform=get_transforms(img_size=image_size, mean=mean, std=std))
+    test_dataset = CustomDataset("data/test", transform=get_transforms(img_size=image_size, mean=mean, std=std))
+
+    # Normilize class imbalance using WeightedRandomSampler.
+    labels = [label for _, label in train_dataset.data]
+    class_counts = np.bincount(labels)
+    weights = 1.0 / class_counts
+    sample_weights = np.array([weights[label] for label in labels])
+
+    weighted_sampler = WeightedRandomSampler(sample_weights, len(sample_weights))
+
+    # Load datasets
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, sampler=weighted_sampler, num_workers=num_workers, pin_memory=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
+
+    return train_loader, val_loader, test_loader
 def main():
     if os.path.exists("data/mean.npy") and os.path.exists("data/std.npy"):
         print("==> Loading saved mean and std..")  
