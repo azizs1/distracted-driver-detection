@@ -29,7 +29,7 @@ class customCNN(nn.Module):
         self.bn4 = nn.BatchNorm2d(128)
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
         # self.adapt = nn.AdaptiveAvgPool2d((64, 64))
-        self.dropout = nn.Dropout(p=0.5)
+        self.dropout = nn.Dropout(p=0.5) # Possibly go back to the 87% model and try a lower drop out and long epochs
         self.fc1 = nn.Linear(in_features=128 * 56 * 56, out_features=512)
         self.fc2 = nn.Linear(in_features=512, out_features=128)
         self.fc3 = nn.Linear(in_features=128, out_features=10)
@@ -48,8 +48,6 @@ class customCNN(nn.Module):
         x = self.fc3(x)
         return x
 
-
-
 def train(model, loader, validation, criterion, optimizer, epochs=2, device="cpu"):
     '''Train a model from training data.
 
@@ -63,8 +61,8 @@ def train(model, loader, validation, criterion, optimizer, epochs=2, device="cpu
     train_accuracies = []
     val_losses = []
     val_accuracies = []
-    for epoch in range(epochs):  # loop over the dataset multiple times
 
+    for epoch in range(epochs):  # loop over the dataset multiple times
         running_loss = 0.0
         total = 0
         correct = 0
@@ -95,10 +93,13 @@ def train(model, loader, validation, criterion, optimizer, epochs=2, device="cpu
             # print statistics
             running_loss += loss.item()
             tqdm_bar.set_postfix(loss=running_loss/(i+1), acc=correct/total)
+    # Save training loss over epochs
     epoch_loss = running_loss / len(loader)
     epoch_acc = correct / total
     train_losses.append(epoch_loss)
     train_accuracies.append(epoch_acc)
+
+    # Test what validation loss is at end of epoch
     val_loss, val_acc = evaluation(model, validation, criterion=criterion, verbose=False, device=device)
     val_losses.append(val_loss)
     val_accuracies.append(val_acc)
@@ -149,6 +150,7 @@ def main():
         print("Using GPU:", torch.cuda.get_device_name(0))
     else:
         print("Using CPU")
+        
     # Load dataset mean and std
     if os.path.exists("data/mean.npy") and os.path.exists("data/std.npy"):
         print("==> Loading saved mean and std..")  
