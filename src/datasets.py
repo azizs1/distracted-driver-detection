@@ -77,9 +77,12 @@ def get_transforms(img_size=224, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 
             transforms.Normalize(mean=mean, std=std),]
     
     if augment:
-        aug = [transforms.RandomHorizontalFlip(p=0.5),
-                transforms.RandomRotation(10),
-                transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.5, hue=0.4),]
+        aug = [
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomRotation(10),
+            transforms.ColorJitter(brightness=0.1, contrast=0.1),
+            # transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0)), # possibly for better generalization
+        ]
         return transforms.Compose(aug + base)
     
     return transforms.Compose(base)
@@ -152,16 +155,16 @@ def load_datasets(batch_size=8, image_size=224, mean=[0.485, 0.456, 0.406], std=
     val_dataset = CustomDataset("data/valid", transform=get_transforms(img_size=image_size, mean=mean, std=std))
     test_dataset = CustomDataset("data/test", transform=get_transforms(img_size=image_size, mean=mean, std=std))
 
-    # Normilize class imbalance using WeightedRandomSampler.
-    labels = [label for _, label in train_dataset.data]
-    class_counts = np.bincount(labels)
-    weights = 1.0 / class_counts
-    sample_weights = np.array([weights[label] for label in labels])
+    # # Normilize class imbalance using WeightedRandomSampler. Do not need as it is balanced enough?? As making it balanced is more deteramental to training.
+    # labels = [label for _, label in train_dataset.data]
+    # class_counts = np.bincount(labels)
+    # weights = 1.0 / class_counts
+    # sample_weights = np.array([weights[label] for label in labels])
 
-    weighted_sampler = WeightedRandomSampler(sample_weights, len(sample_weights))
+    # weighted_sampler = WeightedRandomSampler(sample_weights, len(sample_weights), replacement=True)
 
     # Load datasets
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, sampler=weighted_sampler, num_workers=num_workers, pin_memory=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
 

@@ -6,13 +6,13 @@ from train import train, evaluation, print_results, pick_device
 from torch import nn
 from torch import optim
 from torchsummary import summary
-from torchvision.models import ResNet50_Weights
+from torchvision.models import resnet50, ResNet50_Weights
 
 # Source https://www.geeksforgeeks.org/deep-learning/how-to-implement-transfer-learning-in-pytorch/
 class ModifiedResNet(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes=6):
         super(ModifiedResNet, self).__init__()
-        self.resnet = torch.hub.load('pytorch/vision', 'resnet50', weights=ResNet50_Weights.IMAGENET1K_V1)
+        self.resnet = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
         self.resnet.fc = nn.Linear(self.resnet.fc.in_features, num_classes)  # Change the final fully connected layer for 10 classes
         # Only train the final fully connected layer
         for name, param in self.resnet.named_parameters():
@@ -39,10 +39,9 @@ def main():
     learning_rate_fc = 1e-4
     learning_rate_layer4 = 1e-5
     num_epochs = 20
-    momentum = 0.9
     weight_decay = 1e-4
     num_workers = 4
-    label_smoothing = 0.05
+    label_smoothing = 0.02
 
     # Create datasets
     print("\n==> Loading datasets..")
@@ -55,7 +54,6 @@ def main():
 
     criterion = nn.CrossEntropyLoss(label_smoothing=label_smoothing) # label_smoothing=0.05
     optimizer = optim.Adam([{"params": model.resnet.fc.parameters(), "lr": learning_rate_fc}, {"params": model.resnet.layer4.parameters(), "lr": learning_rate_layer4},], weight_decay=weight_decay)
-    # scheduler = StepLR(optimizer, step_size=5, gamma=0.1) Possibly add a learning rate scheduler later
 
     print("Loader len:", len(train_loader))
     x, y = next(iter(train_loader))

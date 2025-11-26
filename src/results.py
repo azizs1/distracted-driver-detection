@@ -25,11 +25,11 @@ def main():
     _, _, test_loader_res = load_datasets(batch_size=batch_size, image_size=image_size, mean=mean_res, std=std_res, num_workers=num_workers)
 
 
-    CUSTOMCNN_MODEL_PATH = 'data/customcnn_model_89.pth'
+    CUSTOMCNN_MODEL_PATH = 'data/customcnn_model_92.pth'
     MODIFIEDRESNET_MODEL_PATH = 'data/modifiedresnet_model.pth'
 
     # Load models
-    custom_model = customCNN().to(device)
+    custom_model = customCNN(len(set(test_loader.dataset.classes))).to(device)
     custom_model.load_state_dict(torch.load(CUSTOMCNN_MODEL_PATH))
 
     resnet_model = ModifiedResNet(len(set(test_loader_res.dataset.classes))).to(device)
