@@ -4,13 +4,14 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
-from datasets import CustomDataset, get_transforms, get_image_means_stds, load_datasets
+import time
+from datasets import get_image_means_stds, load_datasets
 from torch import nn
 from torch import optim
-from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import StepLR
 from tqdm import tqdm
 from torchsummary import summary
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
 
 class customCNN(nn.Module):
     '''Custom CNN neural network. See above description for what each layer does.'''
@@ -28,7 +29,7 @@ class customCNN(nn.Module):
         self.bn4 = nn.BatchNorm2d(128)
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
         self.adapt = nn.AdaptiveAvgPool2d((14, 14))
-        self.dropout = nn.Dropout(p=0.3) # Possibly go back to the 87% model and try a lower drop out and long epochs
+        self.dropout = nn.Dropout(p=0.2) # Possibly go back to the 87% model and try a lower drop out and long epochs
         self.fc1 = nn.Linear(in_features=128 * 14 * 14, out_features=512)
         self.fc2 = nn.Linear(in_features=512, out_features=128)
         self.fc3 = nn.Linear(in_features=128, out_features=10)
@@ -42,12 +43,12 @@ class customCNN(nn.Module):
         x = self.adapt(x)
         x = torch.flatten(x, 1)
         x = F.relu(self.fc1(x))
-        x = self.dropout(x)
+        # x = self.dropout(x)
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
 
-def train(model, loader, validation, criterion, optimizer, epochs=2, device="cpu"):
+def train(model, loader, validation, criterion, optimizer, epochs=2, device="cpu", save_path="data/customcnn_model.pth"):
     '''Train a model from training data.
 
     Args:
@@ -60,8 +61,10 @@ def train(model, loader, validation, criterion, optimizer, epochs=2, device="cpu
     train_accuracies = []
     val_losses = []
     val_accuracies = []
-
+    best_val_acc = 0.0
+    
     for epoch in range(epochs):  # loop over the dataset multiple times
+        start_time = time.time()
         running_loss = 0.0
         total = 0
         correct = 0
@@ -99,10 +102,17 @@ def train(model, loader, validation, criterion, optimizer, epochs=2, device="cpu
         train_accuracies.append(epoch_acc)
 
         # Test what validation loss is at end of epoch
-        val_loss, val_acc = evaluation(model, validation, criterion=criterion, verbose=False, device=device)
+        val_loss, val_acc, val_precision, val_recall, val_f1, _, _  = evaluation(model, validation, criterion=criterion, verbose=False, device=device)
         val_losses.append(val_loss)
         val_accuracies.append(val_acc)
-        tqdm_bar.write(f"Epoch {epoch+1} | Val Loss: {val_loss:.4f} | Val Acc: {val_acc:.4f}")
+        end_time = time.time()
+        epoch_time = end_time - start_time
+        tqdm_bar.write(f"Epoch {epoch+1} | took {epoch_time:.2f} seconds | Val Acc: {val_acc:.4f}| Val Loss: {val_loss:.4f} | Val Precision: {val_precision:.4f} | Val Recall: {val_recall:.4f} | Val F1: {val_f1:.4f}")
+
+        # Save the best model
+        if val_acc >= best_val_acc:
+            best_val_acc = val_acc
+            torch.save(model.state_dict(), save_path)
 
     print('\nFinished Training')
     return train_losses, train_accuracies, val_losses, val_accuracies
@@ -118,9 +128,11 @@ def evaluation(model, loader, criterion=None, verbose=False, device="cpu"):
     correct = 0
     total = 0
     running_loss = 0.0
+    all_preds = []
+    all_labels = []
     # since we're not training, we don't need to calculate the gradients for our outputs
     with torch.no_grad():
-        for data in tqdm(loader):
+        for data in tqdm(loader, disable=not verbose):
             images, labels = data
             images = images.to(device, non_blocking=True)
             labels = labels.to(device, non_blocking=True)
@@ -135,12 +147,29 @@ def evaluation(model, loader, criterion=None, verbose=False, device="cpu"):
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-    if verbose:
-        print(f'\nAccuracy of the network on the {len(loader)} validation images: {100 * correct // total} %')
+            all_preds.append(predicted.cpu())
+            all_labels.append(labels.cpu())
+    # Concatenate collected predictions
+    all_preds = torch.cat(all_preds).numpy()
+    all_labels = torch.cat(all_labels).numpy()
 
-    val_acc = correct / total
+    # Metrics
+    val_acc = accuracy_score(all_labels, all_preds)
+    val_precision = precision_score(all_labels, all_preds, average="macro")
+    val_recall = recall_score(all_labels, all_preds, average="macro")
+    val_f1 = f1_score(all_labels, all_preds, average="macro")
     val_loss = running_loss / len(loader)
-    return val_loss, val_acc
+
+    # Print out results
+    if verbose:
+        print(f"\nAccuracy:  {val_acc:.4f}")
+        print(f"Precision: {val_precision:.4f}")
+        print(f"Recall:    {val_recall:.4f}")
+        print(f"F1-score:  {val_f1:.4f}")
+        print("\nClassification Report:")
+        print(classification_report(all_labels, all_preds, target_names=loader.dataset.classes))
+
+    return val_loss, val_acc, val_precision, val_recall, val_f1, all_preds, all_labels
 
 def print_results(train_losses, train_accuracies, val_losses, val_accuracies):
     '''Print training and validation results after training.
@@ -191,10 +220,10 @@ def main():
     device = pick_device()
 
     # Load dataset mean and std
-    mean, std = get_image_means_stds()
+    mean, std = get_image_means_stds("data/train")
 
     # Hyperparameters
-    batch_size = 8
+    batch_size = 16
     image_size = 224
     learning_rate = 0.001
     num_epochs = 20
@@ -222,13 +251,9 @@ def main():
     print("First batch shapes:", x.shape, y.shape)
 
     # Train the model
-    train_losses, train_accuracies, val_losses, val_accuracies = train(simple_model, train_loader, val_loader, criterion, optimizer, epochs=num_epochs, device=device)
-    evaluation(simple_model, val_loader, verbose=True, device=device)
-
-    # Save the model
     SIMPLECNN_MODEL_PATH = 'data/customcnn_model.pth'
-    torch.save(simple_model.state_dict(), SIMPLECNN_MODEL_PATH)
-    print(f'\n==> Saved trained model to {SIMPLECNN_MODEL_PATH}')
+    train_losses, train_accuracies, val_losses, val_accuracies = train(simple_model, train_loader, val_loader, criterion, optimizer, epochs=num_epochs, device=device, save_path=SIMPLECNN_MODEL_PATH)
+    evaluation(simple_model, val_loader, verbose=True, device=device)
 
     # Print results
     print_results(train_losses, train_accuracies, val_losses, val_accuracies)
