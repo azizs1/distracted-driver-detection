@@ -6,12 +6,13 @@ from train import train, evaluation, print_results, pick_device
 from torch import nn
 from torch import optim
 from torchsummary import summary
+from torchvision.models import ResNet50_Weights
 
 # Source https://www.geeksforgeeks.org/deep-learning/how-to-implement-transfer-learning-in-pytorch/
 class ModifiedResNet(nn.Module):
     def __init__(self, num_classes):
         super(ModifiedResNet, self).__init__()
-        self.resnet = torch.hub.load('pytorch/vision', 'resnet50', pretrained=True)
+        self.resnet = torch.hub.load('pytorch/vision', 'resnet50', weights=ResNet50_Weights.IMAGENET1K_V1)
         self.resnet.fc = nn.Linear(self.resnet.fc.in_features, num_classes)  # Change the final fully connected layer for 10 classes
         # Only train the final fully connected layer
         for name, param in self.resnet.named_parameters():

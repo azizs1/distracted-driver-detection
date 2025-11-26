@@ -239,11 +239,11 @@ def main():
 
     # Make the model and loss functions
     print("\n==> Initializing model, loss function, and optimizer..")
-    simple_model = customCNN().to(device)
-    summary(simple_model, input_size=(3, image_size, image_size))
+    custom_model = customCNN().to(device)
+    summary(custom_model, input_size=(3, image_size, image_size))
 
     criterion = nn.CrossEntropyLoss(label_smoothing=label_smoothing) # label_smoothing=0.05
-    optimizer = optim.SGD(simple_model.parameters(), lr=learning_rate, momentum=momentum, weight_decay=weight_decay)
+    optimizer = optim.SGD(custom_model.parameters(), lr=learning_rate, momentum=momentum, weight_decay=weight_decay)
     # scheduler = StepLR(optimizer, step_size=5, gamma=0.1) Possibly add a learning rate scheduler later
 
     print("Loader len:", len(train_loader))
@@ -251,9 +251,9 @@ def main():
     print("First batch shapes:", x.shape, y.shape)
 
     # Train the model
-    SIMPLECNN_MODEL_PATH = 'data/customcnn_model.pth'
-    train_losses, train_accuracies, val_losses, val_accuracies = train(simple_model, train_loader, val_loader, criterion, optimizer, epochs=num_epochs, device=device, save_path=SIMPLECNN_MODEL_PATH)
-    evaluation(simple_model, val_loader, verbose=True, device=device)
+    CUSTOMCNN_MODEL_PATH = 'data/customcnn_model.pth'
+    train_losses, train_accuracies, val_losses, val_accuracies = train(custom_model, train_loader, val_loader, criterion, optimizer, epochs=num_epochs, device=device, save_path=CUSTOMCNN_MODEL_PATH)
+    evaluation(custom_model, val_loader, verbose=True, device=device)
 
     # Print results
     print_results(train_losses, train_accuracies, val_losses, val_accuracies)
