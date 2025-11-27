@@ -1,6 +1,4 @@
 # src/train.py - script to train a model on the dataset
-import os
-import numpy as np
 import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
@@ -235,12 +233,10 @@ def main():
     weight_decay = 1e-4
     num_workers = 4
     label_smoothing = 0.05 # help with noisy labels
-    step_size = 5
-    gamma = 0.1
 
     # Create datasets
     print("\n==> Loading datasets..")
-    train_loader, val_loader, test_loader = load_datasets(batch_size=batch_size, image_size=image_size, mean=mean, std=std, num_workers=num_workers)
+    train_loader, val_loader, _ = load_datasets(batch_size=batch_size, image_size=image_size, mean=mean, std=std, num_workers=num_workers)
 
     # Make the model and loss functions
     print("\n==> Initializing model, loss function, and optimizer..")

@@ -1,5 +1,4 @@
 # src/results.py - script to evaluate trained models and print results compared to the TEST dataset
-import os
 import numpy as np
 import torch
 from train import customCNN, evaluation, pick_device
@@ -25,8 +24,8 @@ def main():
     _, _, test_loader_res = load_datasets(batch_size=batch_size, image_size=image_size, mean=mean_res, std=std_res, num_workers=num_workers)
 
 
-    CUSTOMCNN_MODEL_PATH = 'data/customcnn_model_92.pth'
-    MODIFIEDRESNET_MODEL_PATH = 'data/modifiedresnet_model.pth'
+    CUSTOMCNN_MODEL_PATH = 'data/customcnn_model_927_nocoloraug_guassian.pth'
+    MODIFIEDRESNET_MODEL_PATH = 'data/modifiedresnet_model_96_adam.pth'
 
     # Load models
     custom_model = customCNN(len(set(test_loader.dataset.classes))).to(device)

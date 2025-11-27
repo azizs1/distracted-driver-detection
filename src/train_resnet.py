@@ -1,6 +1,5 @@
 # src/train_resnet.py - script to train a resnet on the dataset
 import numpy as np
-import torch
 from datasets import load_datasets
 from train import train, evaluation, print_results, pick_device
 from torch import nn
@@ -45,7 +44,7 @@ def main():
 
     # Create datasets
     print("\n==> Loading datasets..")
-    train_loader, val_loader, test_loader = load_datasets(batch_size=batch_size, image_size=image_size, mean=mean, std=std, num_workers=num_workers)
+    train_loader, val_loader, _ = load_datasets(batch_size=batch_size, image_size=image_size, mean=mean, std=std, num_workers=num_workers)
 
     # model = models.resnet50(pretrained=True)
     print(f" Number of classes: {len(set(train_loader.dataset.classes))}")

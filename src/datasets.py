@@ -81,7 +81,7 @@ def get_transforms(img_size=224, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.RandomRotation(10),
             transforms.ColorJitter(brightness=0.1, contrast=0.1),
-            # transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0)), # possibly for better generalization
+            transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0)), # For better real world generalization
         ]
         return transforms.Compose(aug + base)
     
@@ -170,12 +170,7 @@ def load_datasets(batch_size=8, image_size=224, mean=[0.485, 0.456, 0.406], std=
 
     return train_loader, val_loader, test_loader
 def main():
-    if os.path.exists("data/mean.npy") and os.path.exists("data/std.npy"):
-        print("==> Loading saved mean and std..")  
-        mean = np.load("data/mean.npy")
-        std = np.load("data/std.npy")
-    else:
-        mean, std = get_image_means_stds("data/train")
+    mean, std = get_image_means_stds("data/train")
 
     print("\n==> Loading datasets..")
     train = CustomDataset("data/train", transform=get_transforms(mean=mean, std=std, augment=True))
