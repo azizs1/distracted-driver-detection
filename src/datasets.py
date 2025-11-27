@@ -98,7 +98,7 @@ def get_image_means_stds(folder):
         std = np.load("data/std.npy")
         return mean, std
     
-    # Code refrences https://stackoverflow.com/questions/58151507/why-pytorch-officially-use-mean-0-485-0-456-0-406-and-std-0-229-0-224-0-2?utm_source=chatgpt.com
+    # Code refrences https://stackoverflow.com/questions/58151507/why-pytorch-officially-use-mean-0-485-0-456-0-406-and-std-0-229-0-224-0-2
     dataset = CustomDataset(folder, transform=transforms.ToTensor())
     full_loader = DataLoader(dataset, shuffle=False, num_workers=os.cpu_count())
 
