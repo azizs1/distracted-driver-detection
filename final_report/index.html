@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Final Report</title>
+    <link rel="stylesheet" href="../css/proposal.css">
+</head>
+<body>
+    <nav class="side-nav">
+        <ul>
+            <li><a href="#title">Top</a></li>
+            <li><a href="#abstract">Abstract</a></li>
+            <li><a href="#approach">Approach</a></li>
+            <li><a href="#experiments">Experiments and Results</a></li>
+            <li><a href="#conclusion">Conclusion</a></li>
+            <li><a href="#references">References</a></li>
+        </ul>
+    </nav>
+
+    <section class="title" id="title">
+        <h1>Final Report: Detecting Distracted Driving Using Computer Vision Techniques</h1>
+        <div class="subtitles">
+            <p>Aziz Shaik and Rayden Dodd</p>
+            <p>ECE 5554: Computer Vision (Fall 2025)</p>
+            <p>Virginia Tech</p>
+        </div>
+    </section>
+
+    <section class="section" id="abstract">
+        <h2>Abstract</h2>
+        <p>
+            Distracted driving is a leading cause of accidents around the world, posing a serious threat to public safety.
+            According to the Centers for Disease Control and Prevention (CDC), over 3,100 individuals were killed and 
+            approximately 424,000 were injured in motor vehicle crashes involving a distracted driver in the United States in 2019 [1]. 
+            Equating to almost nine deaths per day, there is a very present need to solve this problem.
+            Despite this, studies indicate that 68% of Gen Z drivers admit to using mobile devices while operating a vehicle [2], 
+            highlighting a disconnect between the awareness of the risk and the actual driving behavior.
+        </p>
+        <p>
+            Many modern vehicles incorporate systems to ensure drivers are focused by limiting interface access or flashing a warning when
+            it detects irregular driving. However, these systems primarily respond to interactions with the vehicle itself and often 
+            fail to capture the broader spectrum of risky driving behaviors.
+        </p>
+        <p>
+            The core challenge presented by this problem lies in accurately identifying specific driver behaviors in real time using visual 
+            data, with operator actions such as phone usage, eating, or signs of tiredness, and making intelligent decisions based on the 
+            severity of the behavior. A system capable of detecting these patterns could help deter dangerous conduct and contribute to a 
+            safer travel experience for passengers and nearby drivers.
+        </p>
+    </section>
+
+    <section class="section" id="approach">
+        <h2>Approach</h2>
+        <p>
+            For this problem, we will attempt two different technical approaches: deep learning techniques and optical flow analysis. The approach differs for each with different
+            success criteria for each method.
+        </p>
+        <h3>Deep Learning</h3>
+        <p>
+            Using a dedicated <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">dataset</a> with labelled frame data
+            to train a CNN, we aim to be able to classify images of drivers into one of the 6 available categories to determine when distracted driving is occurring.
+            An outline of this approach is as follows:
+        </p>
+        <h4>Data Preprocessing</h4>
+        <ul>
+            <li>Normalize pixel values.</li>
+            <li>Augment data to increase diversity (e.g rotations, flips).</li>
+            <li>These image operations will be performed with OpenCV.</li>
+        </ul>
+        <h4>Model Selection</h4>
+        <ul>
+            <li>Train a basic custom-built CNN model using PyTorch to define the architecture.</li>
+            <li>Compare our model to a pre-weighted model like <a href="https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet18.html" target="_blank" rel="noopener noreferrer">resnet18</a> which is pretrained on the <a href="https://en.wikipedia.org/wiki/ImageNet" target="_blank" rel="noopener noreferrer">ImageNet</a> database. 
+                This model is pre-trained on 14 million labeled images. We can then use transfer learning with this model to change the final classification layer to suit our labels.</li>
+            <li>This model will also be tested for live detection.</li>
+        </ul>
+        <h4>Training and Evaluation</h4>
+        <ul>
+            <li>Split the dataset into training, validation, and test sets.</li>
+            <li>Use cross-entropy loss and Adam optimizer for training.</li>
+            <li>Evaluate model performance using accuracy, precision, recall, and f1-score.</li>
+        </ul>
+        <h4>Deployment</h4>
+        <ul>
+            <li>Load the trained model onto an NVIDIA Jetson Nano with a camera connected.</li>
+            <li>Run a simple script to do live predictions while we act out safe vs. distracted behaviors.</li>
+            <li>Show the predicted label on screen and trigger a basic alert during unsafe moments.</li>
+        </ul>
+        <h3>Optical Flow Analysis</h3>
+        <p>
+            As an alternative to deep learning, we implement a motion-based approach using optical flow to detect patterns of movement that may indicate distracted or unsafe driving behaviors. This method analyzes frame-to-frame changes in video captured from a live camera feed, allowing us to track hand gestures, head movement, and signs of fatigue without relying on labeled image classification.
+        </p>
+        <h4>Motion Estimation</h4>
+        <ul>
+            <li>Capture consecutive frames from a live video feed using OpenCV.</li>
+            <li>Convert frames to gray-scale for efficient processing.</li>
+            <li>Compute optical flow using Lucas-Kanade methods to estimate pixel-level motion vectors.</li>
+        </ul>
+
+        <h4>Behavior Detection</h4>
+        <ul>
+            <li>Define regions of interest (e.g. face, hands) using bounding boxes.</li>
+            <li>
+                Track motion magnitude and direction within these regions to identify behaviors:
+                <ul>
+                <li>Hand movement would likely be the flow near the lower frame region, closer to the wheel.</li>
+                <li>Head movement would be a consistent flow near face region, closer to the upper portion of the frame.</li>
+                <li>Fatigue would be minimal and slow motion over time.</li>
+                </ul>
+            </li>
+            <li>Set thresholds for motion magnitude and duration to indicate when the behaviors are identified.</li>
+        </ul>
+
+        <h4>Evaluation</h4>
+        <ul>
+            <li>Simulate unsafe behaviors and record flow maps.</li>
+            <li>Assess reliability based on accuracy and responsiveness.</li>
+        </ul>
+
+        <h4>Deployment</h4>
+        <ul>
+            <li>Run the optical flow script on the NVIDIA Jetson Nano with a connected camera.</li>
+            <li>Process live video in real time and visualize flow vectors on screen.</li>
+            <li>Log when motion patterns match unsafe behavior criteria.</li>
+        </ul>
+    </section>
+
+    <section class="section" id="experiments">
+        <h2>Plans for Experiments</h2>
+        <h3>Dataset</h3>
+        <p>
+            For this project we will use the <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">Driver Inattention Detection Dataset</a> from Kaggle, 
+            containing nearly 15,000 grayscale images of drivers in 6 different states:
+        </p>
+        <ul>
+            <li>Safe Driving</li>
+            <li>Distracted Driving</li>
+            <li>Dangerous Driving</li>
+            <li>Sleepy Driving</li>
+            <li>Drinking</li>
+            <li>Yawn</li>
+        </ul>
+        <p>This dataset is split into three different sets: training, validation, and test. Each set contains the following quantity of test points:</p>
+        <ul>
+            <li>Training Set: 11,942 images</li>
+            <li>Validation Set: 1,922 images</li>
+            <li>Test Set: 985 images</li>
+        </ul>
+        <p>Below are sample frames extracted from the dataset.</p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/man_focused.jpg" alt="Safe Driving">
+                <figcaption>Safe Driving</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/man_drinking.jpg" alt="Drinking">
+                <figcaption>Drinking</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/man_on_phone.jpg" alt="Distracted Driving">
+                <figcaption>Distracted Driving</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/man_sleeping.jpg" alt="Sleepy Driving">
+                <figcaption>Sleepy Driving</figcaption>
+            </figure>
+        </div>
+        <h3>Experiments</h3>
+        <p>
+            Our ultimate goal will be real-time identification of dangerous driving behaviors, and we will attempt accomplishing this in three different ways:
+        </p>
+        <ul>
+            <li>Deep learning using a pre-weighted model (i.e. resnet18)</li>
+            <li>Deep learning using a custom-built CNN</li>
+            <li>Optical flow analysis</li>
+        </ul>
+        <h4>Deep Learning (Custom CNN)</h4>
+        <p>
+            The dataset used here will be the <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">Driver Inattention Detection Dataset</a> 
+            identified earlier in the proposal to train a model using PyTorch. This dataset is already split with 80% dedicated to training and 20% for testing and validation. We hope to achieve at least 85% test accuracy through the tuning of model hyperparameters
+            to consider this approach a successful one. Additionally, we want to ensure that this can be set up as a lightweight model to be used in real-time. Performance concerns may also impact overall accuracy when used in
+            a realistic scenario.
+        </p>
+        <h4>Deep Learning (Pre-weighted Model)</h4>
+        <p>
+            The same dataset that was used for the custom CNN will be used here. We expect that this model will be far more successful than the custom CNN, but we will continue to aim for 85% test accuracy after the transfer
+            learning phase. The resnet18 model is fairly lightweight so it should theoretically perform well in real-time. A comparison analysis will be performed between these two deep learning
+            approaches to observe how each differs and the results that they achieve.
+        </p>
+        <h4>Optical Flow Analysis</h4>
+        <p>
+            This experiment will focus on using optical flow to detect motion-based indicators of distracted driving, such as hand movement, head turning, and signs of fatigue. Unlike the deep learning methods, this approach does not rely on labeled image classification but instead uses frame-to-frame motion estimation to detect behavior.
+            We will simulate these behaviors while parked and log the system’s ability to detect them accurately. Success will be measured by the system’s responsiveness and its ability to correctly identify motion-based behaviors without excessive false positives. This method will also be evaluated for its feasibility on the NVIDIA Jetson Nano in terms of real-time performance and resource usage.
+        </p>
+        </p>
+        <h4>Final Assessment</h4>
+        <p>
+            A comparison of these three methods will be performed at the conclusion of the implementations of each of them and be assessed based on the reliability of each method in 
+            a real-time usecase, as well as the accuracy of each of these methods. Comparing deep learning methods with the optical flow analysis method can allow for a greater understanding of the strengths and weakness
+            of each of these methods in the context of overall accuracy, as well as performance in a real-time scenario. When performing real-time testing, we will set up the camera and NVIDIA Jetson Nano system in our own cars 
+            and evaluate the number of behaviors that are able to be picked up by each method.
+        </p>
+    </section>
+    
+    <section class="section" id="references">
+        <h2>References</h2>
+        <ol class="ieee-references">
+            <li>
+                Centers for Disease Control and Prevention, “Distracted Driving,” *CDC*, 2023. [Online]. Available: 
+                <a href="https://www.cdc.gov/distracted-driving/about/index.html" target="_blank" rel="noopener noreferrer">
+                    https://www.cdc.gov/distracted-driving/about/index.html
+                </a>
+            </li>
+            <li>
+                Insurify, “Texting and Driving Statistics,” *Insurify*, 2023. [Online]. Available: 
+                <a href="https://insurify.com/car-insurance/insights/texting-and-driving-statistics/" target="_blank" rel="noopener noreferrer">
+                    https://insurify.com/car-insurance/insights/texting-and-driving-statistics/
+                </a>
+            </li>
+        </ol>
+    </section>
+</body>
+</html>
