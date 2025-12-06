@@ -10,8 +10,10 @@
         <ul>
             <li><a href="#title">Top</a></li>
             <li><a href="#abstract">Abstract</a></li>
+            <li><a href="#introduction">Introduction</a></li>
             <li><a href="#approach">Approach</a></li>
             <li><a href="#experiments">Experiments and Results</a></li>
+            <li><a href="#qual-results">Qualitative Results</a></li>
             <li><a href="#conclusion">Conclusion</a></li>
             <li><a href="#references">References</a></li>
         </ul>
@@ -26,8 +28,29 @@
         </div>
     </section>
 
+    <section>
+        <!-- Replace this image with something visual from this project -->
+        <div class="image-grid">
+            <figure>
+                <img src="../proposal/static/man_focused.jpg" alt="Safe Driving" style="width:300px; height:auto;">
+                <figcaption>Safe Driving</figcaption>
+            </figure>
+        </div>
+    </section>
+
     <section class="section" id="abstract">
         <h2>Abstract</h2>
+        <p>
+            Modern vehicles come equipped with a number of sensors for safe automotive operation, but these measures tend to be reactive
+            to driver behavior rather than proactive. Using computer vision techniques, such as CNNs and optical flow methods, we have
+            developed two different approaches to capturing and identifying unsafe driver behavior for proactive in-vehicle safety
+            interventions. Using deep learning methods, we obtained a maximum of 96% test accuracy with a RESNET based classifier and
+            92.7% with a custom CNN. <span style="color:red;">[ADD A SENTENCE ABOUT OPTICAL FLOW RESULTS]</span>
+        </p>
+    </section>
+
+    <section class="section" id="Introduction">
+        <h2>Introduction</h2>
         <p>
             Distracted driving is a leading cause of accidents around the world, posing a serious threat to public safety.
             According to the Centers for Disease Control and Prevention (CDC), over 3,100 individuals were killed and 
@@ -126,7 +149,7 @@
     </section>
 
     <section class="section" id="experiments">
-        <h2>Plans for Experiments</h2>
+        <h2>Experiments and Results</h2>
         <h3>Dataset</h3>
         <p>
             For this project we will use the <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">Driver Inattention Detection Dataset</a> from Kaggle, 
@@ -200,6 +223,14 @@
             of each of these methods in the context of overall accuracy, as well as performance in a real-time scenario. When performing real-time testing, we will set up the camera and NVIDIA Jetson Nano system in our own cars 
             and evaluate the number of behaviors that are able to be picked up by each method.
         </p>
+    </section>
+
+    <section class="section" id="qual-results">
+        <h2>Qualitative Results</h2>
+    </section>
+
+    <section class="section" id="conclusion">
+        <h2>Conclusion</h2>
     </section>
     
     <section class="section" id="references">
