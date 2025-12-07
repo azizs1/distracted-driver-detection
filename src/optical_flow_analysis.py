@@ -4,6 +4,7 @@ import tqdm
 import os
 import sys
 import json
+import re
 import argparse
 import mediapipe as mp
 from pathlib import Path
@@ -176,6 +177,7 @@ def compute_optical_flow(frames_dir, faces_dict, alg="lkt-mp"):
             prev_name = file_name
             prev_img = img
     elif alg == "lkt-mp":
+        lm_dict = {}
         # https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker
         face_mesh = mp.solutions.face_mesh.FaceMesh(static_image_mode=False, max_num_faces=1, refine_landmarks=True,
                                                     min_detection_confidence=0.5, min_tracking_confidence=0.5)
@@ -211,6 +213,12 @@ def compute_optical_flow(frames_dir, faces_dict, alg="lkt-mp"):
                         # store displacements
                         flow_maps[f"{prev_name},{file_name}"] = good_new-good_old
 
+                        # save landmarks for this frame
+                        if "landmarks" not in flow_maps:
+                            flow_maps["landmarks"] = {}
+                        lm_curr = results.multi_face_landmarks[0].landmark
+                        lm_dict[file_name] = [(int(lm.x*w_roi), int(lm.y*h_roi)) for lm in lm_curr]
+
                         # # imgs for debug
                         # for (new, old) in zip(good_new, good_old):
                         #     a, b = new.ravel()
@@ -227,9 +235,148 @@ def compute_optical_flow(frames_dir, faces_dict, alg="lkt-mp"):
             prev_img = img
 
     # save it in data directory for quicker runs later
-    np.savez(os.path.join(DATA_DIR, "flow_maps.npz"), **flow_maps)
+    np.savez(os.path.join(DATA_DIR, "flow_lm.npz"), flow_maps=flow_maps, landmarks=lm_dict)
 
-    return flow_maps
+    return flow_maps, lm_dict
+
+# The landmark indices for each eye for EAR were brought in from here:
+# https://github.com/Pushtogithub23/Eye-Blink-Detection-using-MediaPipe-and-OpenCV
+def detect_distractions(frames_dir, flow_maps, lm_dict):
+    decisions = {}
+    closed_seq = []
+    prev_state = "straight"
+    distracted_count = 0
+
+    # lm indices for eyes
+    left_eye_indices = [33, 159, 158, 133, 153, 145]
+    right_eye_indices = [362, 380, 374, 263, 386, 385]
+
+    # https://pyimagesearch.com/2017/04/24/eye-blink-detection-opencv-python-dlib
+    def ear(eye):
+        p1, p2, p3, p4, p5, p6 = eye
+        return (np.linalg.norm(np.array(p2)-np.array(p6)) + np.linalg.norm(np.array(p3)-np.array(p5))) / \
+               (2.0*np.linalg.norm(np.array(p1)-np.array(p4)))
+    
+    for frame_name, lms in lm_dict.items():
+        # use eye aspect ratio for eye stuff
+        left_eye = [lms[i] for i in left_eye_indices]
+        right_eye = [lms[i] for i in right_eye_indices]
+        ear_val = (ear(left_eye[:6])+ear(right_eye[:6]))/2.0
+
+        ear_thresh=0.2
+        blink_frames=9 # this is mostly ok, may have to adjust?
+        decisions.setdefault(frame_name, {})["eye_state"] = None
+
+        if ear_val < ear_thresh:
+            closed_seq.append(frame_name)
+            state = "closed (blink?)"
+            # if closure is longer than threshold, flip to closed
+            if len(closed_seq) > blink_frames:
+                state = "closed"
+
+            decisions.setdefault(frame_name, {})["eye_state"] = state
+        else:
+            decisions.setdefault(frame_name, {})["eye_state"] = "open"
+            closed_seq = []
+
+        # https://medium.com/@abhishekjainindore24/different-ways-to-calculate-head-pose-estimation-ypr-yaw-pitch-and-roll-c3542bac03dc
+        nose = lms[1]
+        left_eye_corner = lms[33]
+        right_eye_corner = lms[263]
+        yaw_thresh = 0.1
+        pitch_thresh = 0.6
+
+        dx = nose[0]-(left_eye_corner[0]+right_eye_corner[0])/2
+        dy = nose[1]-(left_eye_corner[1]+right_eye_corner[1])/2
+        eye_dist = right_eye_corner[0]-left_eye_corner[0]
+        yaw = dx/eye_dist
+        pitch = dy/eye_dist
+
+        if abs(yaw) < yaw_thresh and abs(pitch) < pitch_thresh:
+            head_state = "straight"
+        elif yaw > yaw_thresh:
+            head_state = "right"
+        elif yaw < -yaw_thresh:
+            head_state = "left"
+        elif pitch > pitch_thresh:
+            head_state = "down"
+        else:
+            head_state = "idk"
+        decisions.setdefault(frame_name, {})["transition_state"] = head_state
+
+        flow_key = next((k for k in flow_maps.keys() if frame_name in k), None)
+        if flow_key is not None:
+            flow = flow_maps[flow_key]
+            mean_dx = np.mean(flow[..., 0])
+            mean_dy = np.mean(flow[..., 1])
+
+            dx_thresh = 3
+            dy_thresh = 5
+
+            transition_state = ""
+            if abs(mean_dx) > dx_thresh:
+                if mean_dx > 0:
+                    transition_state = "turning right"
+                else:
+                    transition_state = "turning left"
+            elif abs(mean_dy) > dy_thresh:
+                if mean_dy > 0:
+                    transition_state = "looking down"
+                else:
+                    transition_state = "looking up"
+            decisions[frame_name]["transition_state"] = transition_state
+            print(f"{frame_name}, mean_dx:{mean_dx}, mean_dy:{mean_dy}, head_state:{head_state}, transition_state:{transition_state}")
+
+
+        # make the decision here. add some smoothing so that it is distracted_maybe for at least 4-5 frames before becoming distracted
+        distracted = True
+        decisions.setdefault(frame_name, {})["focus_state"] = "good"
+
+        if head_state == "straight" and decisions[frame_name]["eye_state"] in ("open", "closed (blink?)"):
+            if transition_state in ("turning left", "turning right", "nodding down", "looking up"):
+                distracted_count += 1
+                decisions[frame_name]["focus_state"] = "careful"
+            else:
+                distracted_count = 0
+                decisions[frame_name]["focus_state"] = "good"
+        elif head_state != "straight":
+            distracted_count += 1
+            decisions[frame_name]["focus_state"] = "careful"
+        
+        if distracted_count > 3:
+            decisions[frame_name]["focus_state"] = "distracted"
+
+        print(f"{frame_name}, yaw:{yaw}, pitch:{pitch}, head_state:{head_state}, eye_state:{decisions[frame_name]["eye_state"]}, decision:{decisions[frame_name]["focus_state"]}")
+        decisions.setdefault(frame_name, {})["head_state"] = head_state
+
+    # # this loop is just for debug, to write imgs with the labels on it
+    # for frame_name in lm_dict.keys():
+    #     eye_state = decisions[frame_name].get("eye_state")
+    #     head_state = decisions[frame_name].get("head_state")
+    #     transition_state = decisions[frame_name].get("transition_state")
+    #     focus_state = decisions[frame_name].get("focus_state")
+
+    #     img_path = os.path.join(frames_dir, frame_name)
+    #     img_rgb = cv2.imread(img_path)
+    #     cv2.putText(img_rgb, f"Eyes: {eye_state}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 3, cv2.LINE_AA)
+    #     cv2.putText(img_rgb, f"Head: {head_state}", (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 3, cv2.LINE_AA)
+    #     cv2.putText(img_rgb, transition_state, (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 3, cv2.LINE_AA)
+    #     cv2.putText(img_rgb, re.findall(r'\d+', frame_name)[0], (img_rgb.shape[1]-150, img_rgb.shape[0]-150), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 3, cv2.LINE_AA)
+    #     if focus_state == "good":
+    #         cv2.putText(img_rgb, f"{focus_state}", (50, img_rgb.shape[0]-150), cv2.FONT_HERSHEY_SIMPLEX, 5, (0, 255, 0), 3, cv2.LINE_AA)
+    #     elif focus_state == "careful":
+    #         cv2.putText(img_rgb, f"{focus_state}", (50, img_rgb.shape[0]-150), cv2.FONT_HERSHEY_SIMPLEX, 5, (0, 255, 255), 3, cv2.LINE_AA)
+    #     else:
+    #         cv2.putText(img_rgb, f"{focus_state}", (50, img_rgb.shape[0]-150), cv2.FONT_HERSHEY_SIMPLEX, 5, (0, 0, 255), 3, cv2.LINE_AA)
+
+    #     final_dir = os.path.join(DATA_DIR, "final")
+    #     os.makedirs(final_dir, exist_ok=True)
+    #     out_path = os.path.join(final_dir, "final_" + frame_name)
+    #     cv2.imwrite(out_path, img_rgb)
+
+    with open(os.path.join(BASE_DIR, "decisions.json"), "w") as f:
+        json.dump(decisions, f, indent=4)
+    return decisions
 
 def main():
     p = argparse.ArgumentParser()
@@ -252,10 +399,16 @@ def main():
             # faces_dict = detect_faces(args.frames_dir)
             faces_dict = detect_faces_mediapipe(args.frames_dir)
 
-        compute_optical_flow(args.frames_dir, faces_dict)
+        if os.path.exists(os.path.join(DATA_DIR, "flow_lm.npz")):
+            data = np.load(os.path.join(DATA_DIR, "flow_lm.npz"), allow_pickle=True)
+            flow_maps = data["flow_maps"].item()
+            lm_dict   = data["landmarks"].item()
+        else:
+            flow_maps, lm_dict = compute_optical_flow(args.frames_dir, faces_dict)
+
+        detect_distractions(args.frames_dir, flow_maps, lm_dict)
+
         print(len(faces_dict))
-        # data = np.load(out_path)
-        # flow = data["frame1->frame2"]
     pass
 
 if __name__ == '__main__':
