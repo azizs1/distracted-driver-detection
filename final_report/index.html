@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="../css/proposal.css">
 </head>
 <body>
+    <div class="overlay"></div>
     <nav class="side-nav">
         <ul>
             <li><a href="#title">Top</a></li>
@@ -42,10 +43,11 @@
         <h2>Abstract</h2>
         <p>
             Modern vehicles come equipped with a number of sensors for safe automotive operation, but these measures tend to be reactive
-            to driver behavior rather than proactive. Using computer vision techniques, such as CNNs and optical flow methods, we have
+            to driver behavior rather than proactive. Using computer vision techniques, such as CNNs and optical flow methods with landmarks, we have
             developed two different approaches to capturing and identifying unsafe driver behavior for proactive in-vehicle safety
             interventions. Using deep learning methods, we obtained a maximum of 96% test accuracy with a RESNET based classifier and
-            92.7% with a custom CNN. <span style="color:red;">[ADD A SENTENCE ABOUT OPTICAL FLOW RESULTS]</span>
+            92.7% with a custom CNN. While specific accuracy statistics were not feasible due to the qualitative method of the landmark and optical
+            flow method, it performed reasonably well in a live environment, but did require a lot of threshold tuning which was sometimes inconsistent.
         </p>
     </section>
 
@@ -227,6 +229,99 @@
 
     <section class="section" id="qual-results">
         <h2>Qualitative Results</h2>
+        <h3>Deep Learning</h3>
+        <h3>Landmarks and Optical Flow</h3>
+        <p>
+            As discussed in the previous section this process includes three steps in the pipeline. In the successful "distracted" classification that follows, note that
+            the optical flows inform the system of movement that could contribute to being the movements being a distraction. It is the relation between the position of
+            the nose and the midpoint between the eyes that determines the actual direction of the head (left, right, up, down).
+        </p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/optical_flow/distracted/original.png" alt="Frame">
+                <figcaption>Frame</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/distracted/step1.png" alt="Face Detection">
+                <figcaption>Step 1: Face Detection</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/distracted/step2.png" alt="Optical Flow Computation">
+                <figcaption>Step 2: Optical Flow Computation</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/distracted/step3.png" alt="Decision Assignment">
+                <figcaption>Step 3: Decision Assignment</figcaption>
+            </figure>
+        </div>
+        <p>
+            Similarly, a successful "good" classification is as follows. Here, we see almost no optical flow, indicating no movement anywhere. Since eyes are open and
+            the driver is facing straight with acceptable pitch and yaw, this is determined to include no distracted driving.
+        </p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/optical_flow/good/original.png" alt="Frame">
+                <figcaption>Frame</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/good/step1.png" alt="Face Detection">
+                <figcaption>Step 1: Face Detection</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/good/step2.png" alt="Optical Flow Computation">
+                <figcaption>Step 2: Optical Flow Computation</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/good/step3.png" alt="Decision Assignment">
+                <figcaption>Step 3: Decision Assignment</figcaption>
+            </figure>
+        </div>
+        <p>
+            While eyes are a major part of determining whether a driver is distracted (i.e sleepy), the pipeline accounts for blinks by allowing 9 frames before eyes 
+            are considered closed, and possibly indicating that the driver is falling asleep
+        </p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/optical_flow/good_blink/original.png" alt="Frame">
+                <figcaption>Frame</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/good_blink/step1.png" alt="Face Detection">
+                <figcaption>Step 1: Face Detection</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/good_blink/step2.png" alt="Optical Flow Computation">
+                <figcaption>Step 2: Optical Flow Computation</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/good_blink/step3.png" alt="Decision Assignment">
+                <figcaption>Step 3: Decision Assignment</figcaption>
+            </figure>
+        </div>
+        <p>
+            Besides the eyes, temporal smoothing is also applied when making the decision that a frame indicates distracted driving. In the sequence below, 
+            the optical flow suggests an impending turn to the left, but this could be a slight movement that is not necessarily unsafe. However,
+            if the driver is in this state for more than 3 frames, it is formally classified as being "distracted" driving. In this example, this was only
+            a slight movement and the status went back to "good" after.
+        </p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/optical_flow/careful/original.png" alt="Frame">
+                <figcaption>Frame</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/careful/step1.png" alt="Face Detection">
+                <figcaption>Step 1: Face Detection</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/careful/step2.png" alt="Optical Flow Computation">
+                <figcaption>Step 2: Optical Flow Computation</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/careful/step3.png" alt="Decision Assignment">
+                <figcaption>Step 3: Decision Assignment</figcaption>
+            </figure>
+        </div>
     </section>
 
     <section class="section" id="conclusion">
@@ -250,5 +345,27 @@
             </li>
         </ol>
     </section>
+    <script>
+        const images = document.querySelectorAll(".image-grid img");
+        const overlay = document.querySelector(".overlay");
+
+        images.forEach(img => {
+            img.addEventListener("click", () => {
+            if (img.classList.contains("expanded")) {
+                img.classList.remove("expanded");
+                overlay.style.display = "none";
+            } else {
+                images.forEach(i => i.classList.remove("expanded"));
+                img.classList.add("expanded");
+                overlay.style.display = "block";
+            }
+            });
+        });
+
+        overlay.addEventListener("click", () => {
+            images.forEach(i => i.classList.remove("expanded"));
+            overlay.style.display = "none";
+        });
+        </script>
 </body>
 </html>
