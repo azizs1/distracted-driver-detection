@@ -18,7 +18,7 @@ The files for this section are `optical_flow_analysis.py` and `optical_flow_live
 #### Running Live
 From the base directory, run with `uv run python ./src/optical_flow_analysis.py --live`. This should run without problem if using Ubuntu, but WSL will present some issues. With WSL:
 1. Ensure that WSL2 is being used with `wsl --version`.
-2. Running PS as admin, installed `usbipd`: `winget install --id Microsoft.usbipd-win`
+2. Running PS as admin, install `usbipd`: `winget install --id Microsoft.usbipd-win`
 3. Using `usbipd list`, find the BUSID for the desired input camera and bind this to WSL with `usbipd bind --busid <BUSID>`
 4. Attach to WSL: `usbipd attach --busid <BUSID> --wsl <DIST>`. Use `wsl --list` to see active distribution.
 5. With the camera now attached to WSL, confirm that the web camera is accessible in WSL with `ls /dev/video*`. You should have results appear (i.e. /dev/video0, /dev/video1, /dev/video2, /dev/video3).
