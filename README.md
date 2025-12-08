@@ -24,6 +24,7 @@ From the base directory, run with `uv run python ./src/optical_flow_analysis.py 
 5. With the camera now attached to WSL, confirm that the web camera is accessible in WSL with `ls /dev/video*`. You should have results appear (i.e. /dev/video0, /dev/video1, /dev/video2, /dev/video3).
 
 >NOTE: If the camera is disconnected, you do not need to bind again, but you will need to attach again.
+>NOTE 2: You may see many errors that do not affect the operation of the code, but running `sudo apt install mesa-utils mesa-vulkan-drivers` will install needed drivers to reduce warnings.
  
 #### Running with an MP4
 Simply run `uv run python ./src/optical_flow_analysis.py --frames_dir <FRAMES_DIR>`. This assumes that there is a directory that already exists with the MP4 split up into frames. The `src/generate_frames_from_mp4.py` file can help with this.

@@ -225,3 +225,16 @@ img.expanded {
 .image-grid img.expanded:hover {
   transform: translate(-50%, -50%) !important;
 }
+
+.video-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.video-container video {
+  width: 480px;
+  height: auto;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+}
