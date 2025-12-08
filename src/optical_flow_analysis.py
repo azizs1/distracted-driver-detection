@@ -8,6 +8,7 @@ import re
 import argparse
 import mediapipe as mp
 from pathlib import Path
+import optical_flow_live
 
 BASE_DIR = Path(__file__).parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -200,7 +201,7 @@ def compute_optical_flow(frames_dir, faces_dict, alg="lkt-mp"):
                         h_roi, w_roi, _ = roi.shape
 
                         p0 = np.array([[lm.x*w_roi, lm.y*h_roi] for lm in lm_prev], dtype=np.float32)
-                        p0 = p0.reshape(-1,1,2)
+                        p0 = p0.reshape(-1, 1, 2)
 
                         p1, st, _ = cv2.calcOpticalFlowPyrLK(cv2.cvtColor(roi_prev, cv2.COLOR_BGR2GRAY), 
                                                             cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY), p0, None, winSize=(15,15), maxLevel=2,
@@ -211,7 +212,7 @@ def compute_optical_flow(frames_dir, faces_dict, alg="lkt-mp"):
                             good_old = p0[st==1]
 
                         # store displacements
-                        flow_maps[f"{prev_name},{file_name}"] = good_new-good_old
+                        flow_maps[f"{prev_name}, {file_name}"] = good_new-good_old
 
                         # save landmarks for this frame
                         if "landmarks" not in flow_maps:
@@ -241,7 +242,7 @@ def compute_optical_flow(frames_dir, faces_dict, alg="lkt-mp"):
 
 # The landmark indices for each eye for EAR were brought in from here:
 # https://github.com/Pushtogithub23/Eye-Blink-Detection-using-MediaPipe-and-OpenCV
-def detect_distractions(frames_dir, flow_maps, lm_dict):
+def detect_distractions(flow_maps, lm_dict):
     decisions = {}
     closed_seq = []
     prev_state = "straight"
@@ -261,7 +262,7 @@ def detect_distractions(frames_dir, flow_maps, lm_dict):
         # use eye aspect ratio for eye stuff
         left_eye = [lms[i] for i in left_eye_indices]
         right_eye = [lms[i] for i in right_eye_indices]
-        ear_val = (ear(left_eye[:6])+ear(right_eye[:6]))/2.0
+        ear_val = (ear(left_eye)+ear(right_eye))/2.0
 
         ear_thresh=0.2
         blink_frames=9 # this is mostly ok, may have to adjust?
@@ -385,8 +386,24 @@ def main():
     args = p.parse_args()
 
     if (args.live):
-        # work on this component once we add live streaming
-        sys.exit()
+        cap = cv2.VideoCapture(0)
+
+        # have to set MJPG format otherwise it tries mpeg4 and doesnt work
+        # use 'v4l2-ctl --device=/dev/video0 --list-formats-ext' to look at available formats for camera
+        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            frame = optical_flow_live.detect_distractions_live(frame)
+            cv2.imshow("camera", frame)
+            # quit on q like ffmpeg
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+        cap.release()
+        cv2.destroyAllWindows()
     else:
         if not args.frames_dir:
             print("gotta have frames_dir if not live")
@@ -406,7 +423,7 @@ def main():
         else:
             flow_maps, lm_dict = compute_optical_flow(args.frames_dir, faces_dict)
 
-        detect_distractions(args.frames_dir, flow_maps, lm_dict)
+        detect_distractions(flow_maps, lm_dict)
 
         print(len(faces_dict))
     pass
