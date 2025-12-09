@@ -5,6 +5,7 @@ import os
 import sys
 import json
 import re
+import seaborn as sns
 import argparse
 import mediapipe as mp
 from pathlib import Path
@@ -345,7 +346,7 @@ def detect_distractions(flow_maps, lm_dict):
             else:
                 distracted_count = 0
                 decisions[frame_name]["focus_state"] = "good"
-        elif head_state != "straight":
+        elif head_state != "straight" or decisions[frame_name]["eye_state"] == "closed":
             distracted_count += 1
             decisions[frame_name]["focus_state"] = "careful"
         
@@ -402,7 +403,7 @@ def main():
                 break
 
             frame = optical_flow_live.detect_distractions_live(frame)
-            cv2.imshow("camera", frame)
+            cv2.imshow("Distracted Driver Detector", frame)
             # quit on q like ffmpeg
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -426,7 +427,7 @@ def main():
             flow_maps = data["flow_maps"].item()
             lm_dict   = data["landmarks"].item()
         else:
-            flow_maps, lm_dict = compute_optical_flow(args.frames_dir, faces_dict, "lkt")
+            flow_maps, lm_dict = compute_optical_flow(args.frames_dir, faces_dict)
 
         detect_distractions(flow_maps, lm_dict)
 
