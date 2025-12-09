@@ -37,8 +37,8 @@
                 <figcaption>A Distracted Driver on the Phone</figcaption>
             </figure>
             <figure>
-                <img src="./static/deep_learning/final2221.png" alt="Distracted Driving" style="width:300px; height:auto;">
-                <figcaption>A Distracted Rayden</figcaption>
+                <img src="./static/deep_learning/final2221.png" alt="Safe Driving" style="width:300px; height:auto;">
+                <figcaption>A Safe Driver</figcaption>
             </figure>
         </div>
     </section>
@@ -81,77 +81,109 @@
     <section class="section" id="approach">
         <h2>Approach</h2>
         <p>
-            For this problem, we will attempt two different technical approaches: deep learning techniques and optical flow analysis. The approach differs for each with different
-            success criteria for each method.
+            For this problem, we attempt two different technical approaches: one method using deep learning model to classify behavior and another method making use
+            of landmarks and optical flow analysis to characterize behavior. The approach differs for each with different success criteria for each method.
         </p>
         <h3>Deep Learning</h3>
+        
+        <h3>Landmarks and Optical Flow Analysis</h3>
         <p>
-            Using a dedicated <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">dataset</a> with labelled frame data
-            to train a CNN, we aim to be able to classify images of drivers into one of the 6 available categories to determine when distracted driving is occurring.
-            An outline of this approach is as follows:
+            As an alternative to a pure deep learning procedure, we implement a motion-based approach using optical flow to detect movements using
+            facial landmarks. This method analyzes frame-to-frame changes in video captured from a live camera feed or video, 
+            allowing us to track  head movement, eye movement, and other facial features without relying on labeled image classification.
         </p>
-        <h4>Data Preprocessing</h4>
+        <h4>Face Detection</h4>
         <ul>
-            <li>Normalize pixel values.</li>
-            <li>Augment data to increase diversity (e.g rotations, flips).</li>
-            <li>These image operations will be performed with OpenCV.</li>
+            <li>Use MediaPipe's facial detection to efficiently locate bounding boxes around the driver's face in each frame</li>
+            <li>If there are multiple faces found, select the largest one to filter out other faces and possible false detections.</li>
+            <li>Capture the dimensions of this bounding box as the region of interest to work with.</li>
         </ul>
-        <h4>Model Selection</h4>
-        <ul>
-            <li>Train a basic custom-built CNN model using PyTorch to define the architecture.</li>
-            <li>Compare our model to a pre-weighted model like <a href="https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet18.html" target="_blank" rel="noopener noreferrer">resnet18</a> which is pretrained on the <a href="https://en.wikipedia.org/wiki/ImageNet" target="_blank" rel="noopener noreferrer">ImageNet</a> database. 
-                This model is pre-trained on 14 million labeled images. We can then use transfer learning with this model to change the final classification layer to suit our labels.</li>
-            <li>This model will also be tested for live detection.</li>
-        </ul>
-        <h4>Training and Evaluation</h4>
-        <ul>
-            <li>Split the dataset into training, validation, and test sets.</li>
-            <li>Use cross-entropy loss and Adam optimizer for training.</li>
-            <li>Evaluate model performance using accuracy, precision, recall, and f1-score.</li>
-        </ul>
-        <h4>Deployment</h4>
-        <ul>
-            <li>Load the trained model onto an NVIDIA Jetson Nano with a camera connected.</li>
-            <li>Run a simple script to do live predictions while we act out safe vs. distracted behaviors.</li>
-            <li>Show the predicted label on screen and trigger a basic alert during unsafe moments.</li>
-        </ul>
-        <h3>Optical Flow Analysis</h3>
+        <br>
         <p>
-            As an alternative to deep learning, we implement a motion-based approach using optical flow to detect patterns of movement that may indicate distracted or unsafe driving behaviors. This method analyzes frame-to-frame changes in video captured from a live camera feed, allowing us to track hand gestures, head movement, and signs of fatigue without relying on labeled image classification.
+            Initially, the Haar cascade classifier was used for facial detection, and while it was very fast, it tended to be inaccurate and the bounding box
+            that was returned was often to small and did not capture enough of the face. Additionally, there would be many frames where it simply did not capture
+            any faces. From a sample of 4089 frames, the Haar cascade classifier could not locate a face in 1315 of these frames, while MediaPipe only missed 72 frames.
         </p>
-        <h4>Motion Estimation</h4>
-        <ul>
-            <li>Capture consecutive frames from a live video feed using OpenCV.</li>
-            <li>Convert frames to gray-scale for efficient processing.</li>
-            <li>Compute optical flow using Lucas-Kanade methods to estimate pixel-level motion vectors.</li>
-        </ul>
+            
+        <div class="image-grid">
+            <figure>
+                <img src="./static/optical_flow/facebox_frame_2911_haar.png" alt="Haar" style="width:400px; height:auto;">
+                <figcaption>Bounding Box with Haar Cascades</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/facebox_frame_2911_mp.png" alt="MediaPipe" style="width:400px; height:auto;">
+                <figcaption>Bounding Box with MediaPipe</figcaption>
+            </figure>
+        </div>
 
-        <h4>Behavior Detection</h4>
+        <p>
+            With the bounding box, we could ignore anything outside of it and use this to reduce computation and possible errors. If there are multiple people in the car,
+            the main face in front of the camera, the driver, would be the only one with a facial mesh formed for it, further simplifying computation.
+        </p>
+
+        <h4>Optical Flow Analysis</h4>
         <ul>
-            <li>Define regions of interest (e.g. face, hands) using bounding boxes.</li>
-            <li>
-                Track motion magnitude and direction within these regions to identify behaviors:
+            <li>Extract facial landmarks from consecutive frames using MediaPipe's face mesh.</li>
+            <li>Apply Lucas-Kanade optical flow (cv2.calcOpticalFlowPyrLK) to track landmark displacement between frames.</li>
+            <li>Compute average horizontal (dx) and vertical (dy) shifts to infer head movement.</li>
+            <li>Threshold displacements to classify transitions in one of the following states:
                 <ul>
-                <li>Hand movement would likely be the flow near the lower frame region, closer to the wheel.</li>
-                <li>Head movement would be a consistent flow near face region, closer to the upper portion of the frame.</li>
-                <li>Fatigue would be minimal and slow motion over time.</li>
+                    <li>turning left</li>
+                    <li>turning right</li>
+                    <li>looking up</li>
+                    <li>looking down</li>
                 </ul>
             </li>
-            <li>Set thresholds for motion magnitude and duration to indicate when the behaviors are identified.</li>
         </ul>
+        <br>
+        <p>
+            The initial approach involved making use of Farneback optical flow, but even with the cropped ROI, this was far too computationally expensive. Running live
+            was very slow and eventually crashed, and running with an MP4 file caused crashes as well, doing about 2000 frames in 20 minutes. For this reason, we switched
+            to using sparse optical flow, the Lucas-Kanade algorithm, which ran much faster and was usable for live detection. The initial implementation made use of
+            cv2.goodFeaturesToTrack, which uses the Shi-Tomasi corner detection algorithm, but the features detected with this were not great (click on the second image to expand).
+            Largely due to the use of the NIR image, it detected high intensity locations such as the shiny metal component of the headrest behind the face, and occasionally,
+            eyes.
+        </p>
+        <p>
+            Another change in procedure was made here to make use of the MediaPipe face mesh for good features to use for tracking optical flow. This allowed for just enough
+            useful features to track facial components and get a good indicator of optical flow between frames, while also being easily run live. Additionally, since just the 
+            face was being used for these landmarks, extraneous keypoints from the surroundings that may still appear in the face's bounding box, would not appear. The transition
+            state is set based on the average flow in the horizontal and vertical decision, with the horizontal flow taking priority.
+        </p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/optical_flow/op_flow/op_flow_farneback_frame_46_frame_47.png" alt="Farneback">
+                <figcaption>Dense Optical Flow (Farneback)</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/op_flow/op_flow_lkt_frame_46_frame_47.png" alt="Lucas-Kanade (ST)">
+                <figcaption>Sparse Optical Flow (Lucas-Kanade) with Shi-Tomasi Corner Detection</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/op_flow/op_flow_lkt-mp_frame_46_frame_47.png" alt="Lucas-Kanade (MP)">
+                <figcaption>Sparse Optical Flow (Lucas-Kanade) with MediaPipe Facial Landmarks</figcaption>
+            </figure>
+        </div>
 
-        <h4>Evaluation</h4>
+        <h4>Decision Assignment</h4>
         <ul>
-            <li>Simulate unsafe behaviors and record flow maps.</li>
-            <li>Assess reliability based on accuracy and responsiveness.</li>
+            <li>Calculate Eye Aspect Ratio (EAR) from eye landmarks to determine whether eyes are open or closed.</li>
+            <li>Estimate yaw and pitch from nose and eye corner positions to determine head orientation (straight, left, right, down).</li>
+            <li>Combine optical flow transitions, EAR values, and head orientation to assign a decision for a frame based on thresholds for each of these.</li>
+            <li>Assign final states:
+                <ul>
+                    <li>good: Eyes are open (or mid-blink) and head is facing straight. Not actively transitioning.</li>
+                    <li>careful: Transitory state indicating that driver is not distracted, but appear to be transitioning head state.</li>
+                    <li>distracted: Eyes are not open and/or head is not straight.</li>
+                </ul>
+            </li>
         </ul>
-
-        <h4>Deployment</h4>
-        <ul>
-            <li>Run the optical flow script on the NVIDIA Jetson Nano with a connected camera.</li>
-            <li>Process live video in real time and visualize flow vectors on screen.</li>
-            <li>Log when motion patterns match unsafe behavior criteria.</li>
-        </ul>
+        <br>
+        <p>
+            This step in the pipeline is fairly straightforward, and largely consists of thresholding EAR values, yaw and pitch values, and making a decision tree to
+            determine the final state of the driver. Through trial and error, effective thresholds were found with a light smoothing applied to account for blinking and 
+            slight movements that do not fully cause a driver to be distracted.
+        </p>
     </section>
 
     <section class="section" id="experiments">
@@ -159,7 +191,7 @@
         <h3>Dataset</h3>
         <p>
             For this project we will use the <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">Driver Inattention Detection Dataset</a> from Kaggle, 
-            containing nearly 15,000 grayscale images of drivers in 6 different states:
+            containing nearly 15,000 NIR images of drivers in 6 different states:
         </p>
         <ul>
             <li>Safe Driving</li>
@@ -178,19 +210,19 @@
         <p>Below are sample frames extracted from the dataset.</p>
         <div class="image-grid">
             <figure>
-                <img src="./static/man_focused.jpg" alt="Safe Driving">
+                <img src="../proposal/static/man_focused.jpg" alt="Safe Driving">
                 <figcaption>Safe Driving</figcaption>
             </figure>
             <figure>
-                <img src="./static/man_drinking.jpg" alt="Drinking">
+                <img src="../proposal/static/man_drinking.jpg" alt="Drinking">
                 <figcaption>Drinking</figcaption>
             </figure>
             <figure>
-                <img src="./static/man_on_phone.jpg" alt="Distracted Driving">
+                <img src="../proposal/static/man_on_phone.jpg" alt="Distracted Driving">
                 <figcaption>Distracted Driving</figcaption>
             </figure>
             <figure>
-                <img src="./static/man_sleeping.jpg" alt="Sleepy Driving">
+                <img src="../proposal/static/man_sleeping.jpg" alt="Sleepy Driving">
                 <figcaption>Sleepy Driving</figcaption>
             </figure>
         </div>
@@ -234,7 +266,7 @@
     <section class="section" id="qual-results">
         <h2>Qualitative Results</h2>
         <h3>Deep Learning</h3>
-        <h3>Landmarks and Optical Flow</h3>
+        <h3>Landmarks and Optical Flow Analysis</h3>
         <p>
             As discussed in the previous section this process includes three steps in the pipeline. In the successful "distracted" classification that follows, note that
             the optical flows inform the system of movement that could contribute to being the movements being a distraction. It is the relation between the position of

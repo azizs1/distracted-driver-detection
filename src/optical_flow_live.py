@@ -52,11 +52,9 @@ def detect_distractions_live(frame):
                     lm_prev = results_prev.multi_face_landmarks[0].landmark
                     p0 = np.array([[lm.x*w_roi, lm.y*h_roi] for lm in lm_prev], dtype=np.float32).reshape(-1, 1, 2)
 
-                    p1, st, _ = cv2.calcOpticalFlowPyrLK(
-                        cv2.cvtColor(roi_prev, cv2.COLOR_BGR2GRAY), cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY),
-                        p0, None, winSize=(15,15), maxLevel=2,
-                        criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03)
-                    )
+                    p1, st, _ = cv2.calcOpticalFlowPyrLK(cv2.cvtColor(roi_prev, cv2.COLOR_BGR2GRAY), cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY),
+                                                         p0, None, winSize=(15,15), maxLevel=2, 
+                                                         criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
                     if p1 is not None:
                         good_new = p1[st==1]
                         good_old = p0[st==1]
@@ -155,7 +153,7 @@ def detect_distractions_live(frame):
                 distracted_count += 1
                 focus_state = "careful"
             
-            if distracted_count > 3:
+            if distracted_count > 30:
                 focus_state = "distracted"
 
             # overlay some current stats with final decision

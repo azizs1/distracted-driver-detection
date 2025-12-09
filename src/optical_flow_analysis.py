@@ -108,6 +108,7 @@ def compute_optical_flow(frames_dir, faces_dict, alg="lkt-mp"):
     flow_maps = {}
     prev_name = ""
     prev_img = None
+    lm_dict = {}
 
     if alg == "farneback":
         for file_name in tqdm.tqdm(sorted(faces_dict.keys(), key=lambda x: int(Path(x).stem.replace("frame_", ""))), desc="Processing frames"):
@@ -161,20 +162,24 @@ def compute_optical_flow(frames_dir, faces_dict, alg="lkt-mp"):
                             good_new = p1[st==1]
                             good_old = p0[st==1]
 
-                        # store displacements
-                        displacements = good_new-good_old
-                        flow_maps[f"{prev_name},{file_name}"] = displacements
+                            # offset coordinates back to full image
+                            good_new_full = good_new + np.array([x, y])
+                            good_old_full = good_old + np.array([x, y])
 
-                        debug_img = cv2.cvtColor(roi, cv2.COLOR_GRAY2BGR)
-                        for (new, old) in zip(good_new, good_old):
-                            a, b = new.ravel()
-                            c, d = old.ravel()
-                            debug_img = cv2.line(debug_img, (int(a), int(b)), (int(c), int(d)), (0,255,0), 2)
-                            debug_img = cv2.circle(debug_img, (int(a), int(b)), 3, (0,0,255), -1)
+                            # store displacements
+                            displacements = good_new_full - good_old_full
+                            flow_maps[f"{prev_name},{file_name}"] = displacements
 
-                        lkt_dir = os.path.join(DATA_DIR, "op_flow_lkt")
-                        os.makedirs(lkt_dir, exist_ok=True)
-                        cv2.imwrite(os.path.join(lkt_dir, f"op_flow_{alg}_{Path(prev_name).stem}_{Path(file_name).stem}.png"), debug_img)
+                            debug_img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+                            for (new, old) in zip(good_new_full, good_old_full):
+                                a, b = new.ravel()
+                                c, d = old.ravel()
+                                debug_img = cv2.line(debug_img, (int(a), int(b)), (int(c), int(d)), (0,255,0), 2)
+                                debug_img = cv2.circle(debug_img, (int(a), int(b)), 3, (0,0,255), -1)
+
+                            lkt_dir = os.path.join(DATA_DIR, "op_flow_lkt")
+                            os.makedirs(lkt_dir, exist_ok=True)
+                            cv2.imwrite(os.path.join(lkt_dir, f"op_flow_{alg}_{Path(prev_name).stem}_{Path(file_name).stem}.png"), debug_img)
             prev_name = file_name
             prev_img = img
     elif alg == "lkt-mp":
@@ -344,7 +349,7 @@ def detect_distractions(flow_maps, lm_dict):
             distracted_count += 1
             decisions[frame_name]["focus_state"] = "careful"
         
-        if distracted_count > 3:
+        if distracted_count > 30:
             decisions[frame_name]["focus_state"] = "distracted"
 
         print(f"{frame_name}, yaw:{yaw}, pitch:{pitch}, head_state:{head_state}, eye_state:{decisions[frame_name]["eye_state"]}, decision:{decisions[frame_name]["focus_state"]}")
@@ -421,7 +426,7 @@ def main():
             flow_maps = data["flow_maps"].item()
             lm_dict   = data["landmarks"].item()
         else:
-            flow_maps, lm_dict = compute_optical_flow(args.frames_dir, faces_dict)
+            flow_maps, lm_dict = compute_optical_flow(args.frames_dir, faces_dict, "lkt")
 
         detect_distractions(flow_maps, lm_dict)
 
