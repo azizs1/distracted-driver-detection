@@ -5,6 +5,21 @@ from train import customCNN, evaluation, pick_device
 from train_resnet import ModifiedResNet
 from datasets import load_datasets, get_image_means_stds
 
+def load_model(arch, model_path, num_classes, device):
+    print(f"==> Loading model {arch} from {model_path}...")
+    if arch == "custom":
+        model = customCNN(num_classes)
+    elif arch == "resnet":
+        model = ModifiedResNet(num_classes)
+    else:
+        raise ValueError(f"Unknown arch '{arch}'")
+
+    state_dict = torch.load(model_path, map_location=device)
+    model.load_state_dict(state_dict)
+    model.to(device)
+    model.eval()
+    return model
+
 def main():
     # Device setup
     device = pick_device()
@@ -28,11 +43,11 @@ def main():
     MODIFIEDRESNET_MODEL_PATH = 'data/modifiedresnet_model_96_adam.pth'
 
     # Load models
-    custom_model = customCNN(len(set(test_loader.dataset.classes))).to(device)
-    custom_model.load_state_dict(torch.load(CUSTOMCNN_MODEL_PATH))
+    num_classes_custom = len(set(test_loader.dataset.classes))
+    num_classes_resnet = len(set(test_loader_res.dataset.classes))
 
-    resnet_model = ModifiedResNet(len(set(test_loader_res.dataset.classes))).to(device)
-    resnet_model.load_state_dict(torch.load(MODIFIEDRESNET_MODEL_PATH))
+    custom_model = load_model("custom", CUSTOMCNN_MODEL_PATH, num_classes_custom, device)
+    resnet_model = load_model("resnet", MODIFIEDRESNET_MODEL_PATH, num_classes_resnet, device)
     
     evaluation(custom_model, test_loader, verbose=True, device=device)
     evaluation(resnet_model, test_loader_res, verbose=True, device=device)
