@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <title>Final Report</title>
     <link rel="stylesheet" href="../css/proposal.css">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
 </head>
 <body>
     <div class="overlay"></div>
@@ -94,7 +98,7 @@
         </p>
         <h4>Face Detection</h4>
         <ul>
-            <li>Use MediaPipe's facial detection to efficiently locate bounding boxes around the driver's face in each frame</li>
+            <li>Use MediaPipe's pre-trained facial detection model to efficiently locate bounding boxes around the driver's face in each frame</li>
             <li>If there are multiple faces found, select the largest one to filter out other faces and possible false detections.</li>
             <li>Capture the dimensions of this bounding box as the region of interest to work with.</li>
         </ul>
@@ -167,7 +171,7 @@
 
         <h4>Decision Assignment</h4>
         <ul>
-            <li>Calculate Eye Aspect Ratio (EAR) from eye landmarks to determine whether eyes are open or closed.</li>
+            <li>Calculate eye aspect ratio (EAR) from eye landmarks to determine whether eyes are open or closed.</li>
             <li>Estimate yaw and pitch from nose and eye corner positions to determine head orientation (straight, left, right, down).</li>
             <li>Combine optical flow transitions, EAR values, and head orientation to assign a decision for a frame based on thresholds for each of these.</li>
             <li>Assign final states:
@@ -181,8 +185,12 @@
         <br>
         <p>
             This step in the pipeline is fairly straightforward, and largely consists of thresholding EAR values, yaw and pitch values, and making a decision tree to
-            determine the final state of the driver. Through trial and error, effective thresholds were found with a light smoothing applied to account for blinking and 
-            slight movements that do not fully cause a driver to be distracted.
+            determine the final state of the driver. Eye aspect ratio is a formula that was proposed to detect eye closures [3]:
+            $$\mathrm{EAR} = \frac{\lVert \mathbf{p}_2 - \mathbf{p}_6 \rVert + \lVert \mathbf{p}_3 - \mathbf{p}_5 \rVert}{2 \lVert \mathbf{p}_1 - \mathbf{p}_4 \rVert}$$
+            This allowed us to use an effective and proven method of understanding when the user is closing their eyes on each frame. The yaw and pitch values were derived by
+            using the midpoint between the eyes and the nose to determine head orientation. Through trial and error, effective thresholds were found with a light smoothing 
+            applied to account for blinking and slight movements that do not fully cause a driver to be distracted, but if maintained for a lenghty amount of time, 
+            could represent a distracted driver.
         </p>
     </section>
 
@@ -248,10 +256,10 @@
             learning phase. The resnet18 model is fairly lightweight so it should theoretically perform well in real-time. A comparison analysis will be performed between these two deep learning
             approaches to observe how each differs and the results that they achieve.
         </p>
-        <h4>Optical Flow Analysis</h4>
+        <h4>Landmarks and Optical Flow Analysis</h4>
         <p>
             This experiment will focus on using optical flow to detect motion-based indicators of distracted driving, such as hand movement, head turning, and signs of fatigue. Unlike the deep learning methods, this approach does not rely on labeled image classification but instead uses frame-to-frame motion estimation to detect behavior.
-            We will simulate these behaviors while parked and log the system’s ability to detect them accurately. Success will be measured by the system’s responsiveness and its ability to correctly identify motion-based behaviors without excessive false positives. This method will also be evaluated for its feasibility on the NVIDIA Jetson Nano in terms of real-time performance and resource usage.
+            We will simulate these behaviors while parked and log the system's ability to detect them accurately. Success will be measured by the system's responsiveness and its ability to correctly identify motion-based behaviors without excessive false positives. This method will also be evaluated for its feasibility on the NVIDIA Jetson Nano in terms of real-time performance and resource usage.
         </p>
         </p>
         <h4>Final Assessment</h4>
@@ -314,7 +322,7 @@
         </div>
         <p>
             While eyes are a major part of determining whether a driver is distracted (i.e sleepy), the pipeline accounts for blinks by allowing 9 frames before eyes 
-            are considered closed, and possibly indicating that the driver is falling asleep
+            are considered closed, and possibly indicating that the driver is falling asleep.
         </p>
         <div class="image-grid">
             <figure>
@@ -337,7 +345,7 @@
         <p>
             Besides the eyes, temporal smoothing is also applied when making the decision that a frame indicates distracted driving. In the sequence below, 
             the optical flow suggests an impending turn to the left, but this could be a slight movement that is not necessarily unsafe. However,
-            if the driver is in this state for more than 3 frames, it is formally classified as being "distracted" driving. In this example, this was only
+            if the driver is in this state for more than 30 frames, it is formally classified as being "distracted" driving. In this example, this was only
             a slight movement and the status went back to "good" after.
         </p>
         <div class="image-grid">
@@ -386,6 +394,14 @@
                 Insurify, “Texting and Driving Statistics,” *Insurify*, 2023. [Online]. Available: 
                 <a href="https://insurify.com/car-insurance/insights/texting-and-driving-statistics/" target="_blank" rel="noopener noreferrer">
                     https://insurify.com/car-insurance/insights/texting-and-driving-statistics/
+                </a>
+            </li>
+            <li>
+                T. Soukupová and J. Čech, "Real-Time Eye Blink Detection using Facial Landmarks," 
+                Center for Machine Perception, Department of Cybernetics, Faculty of Electrical Engineering, 
+                Czech Technical University in Prague, Research Report No. 2016-05, 2016. [Online]. Available: 
+                <a href="https://cmp.felk.cvut.cz/ftp/articles/cech/Soukupova-TR-2016-05.pdf" target="_blank" rel="noopener noreferrer">
+                    https://cmp.felk.cvut.cz/ftp/articles/cech/Soukupova-TR-2016-05.pdf
                 </a>
             </li>
         </ol>
