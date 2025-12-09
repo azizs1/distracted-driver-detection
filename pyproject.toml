@@ -1,9 +1,10 @@
 [project]
 name = "distracted-driver-detection"
 version = "0.1.0"
-description = "Add your description here"
+description = "Distracted driver detection using deep learning"
 readme = "README.md"
 requires-python = ">=3.12"
+
 dependencies = [
     "albumentations>=2.0.8",
     "matplotlib>=3.10.7",
@@ -14,7 +15,21 @@ dependencies = [
     "scikit-learn>=1.7.2",
     "seaborn>=0.13.2",
     "torch>=2.5.1",
-    "torchsummary>=1.5.1",
     "torchvision>=0.20.1",
+    "torchsummary>=1.5.1",
     "tqdm>=4.67.1",
 ]
+
+[tool.uv]
+# Apply CUDA PyTorch only on Windows
+environments = ["sys_platform == 'win32'"]
+
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu121" }
+torchvision = { index = "pytorch-cu121" }
+torchaudio = { index = "pytorch-cu121" }
