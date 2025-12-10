@@ -245,8 +245,8 @@ img.expanded {
 }
 
 .video-container video {
-  width: 480px;
-  height: auto;
+  max-height: 300px;
+  width: auto;
   border: 2px solid #ccc;
   border-radius: 8px;
 }
@@ -281,4 +281,9 @@ img.expanded {
     font-weight: bold;
 }
 
-
+.videos-wrapper {
+    display: flex;              /* enables flexbox */
+    gap: 20px;                  /* space between videos */
+    justify-content: center;    /* center them horizontally */
+    align-items: flex-start;    /* align tops of videos */
+  }
