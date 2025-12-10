@@ -36,6 +36,8 @@ def main():
     parser.add_argument("--live", action="store_true")
     parser.add_argument("--camera", type=int, default=0)
     parser.add_argument("--video", type=str)
+    parser.add_argument("--save", action="store_true", help="Save output video")
+    parser.add_argument("--out", type=str, default="output.mp4", help="Output video path")
     args = parser.parse_args()
     
     device = pick_device()
@@ -68,11 +70,26 @@ def main():
     if args.live:
         print("Starting live video feed...")
         cap = cv2.VideoCapture(args.camera)
-        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)
-        cap.set(cv2.CAP_PROP_EXPOSURE, -6)
+        # cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)
+        # cap.set(cv2.CAP_PROP_EXPOSURE, -6)
     else:
         print(f"Opening video file {args.video}...")
         cap = cv2.VideoCapture(args.video)
+
+    writer = None
+
+    if args.save:
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        if fps == 0 or np.isnan(fps):
+            fps = 30.0
+
+        width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        writer = cv2.VideoWriter(args.out, fourcc, fps, (width, height))
+
+        print(f"Saving output video to {args.out}")
 
     print("Quit by pressing 'q'.")
 
@@ -91,14 +108,18 @@ def main():
             color = (0, 0, 255)
 
         cv2.putText(frame, f"{label} ({conf*100:.1f}%)", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, color, 3, cv2.LINE_AA,)
-
+        if args.save:
+            writer.write(frame)
         cv2.imshow("Driving Monitor", frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     cap.release()
+    if writer is not None:
+        writer.release()
     cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     main()
