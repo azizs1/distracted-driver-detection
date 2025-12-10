@@ -10,6 +10,16 @@ import argparse
 import mediapipe as mp
 from pathlib import Path
 import optical_flow_live
+import pandas as pd
+import matplotlib.pyplot as plt
+import csv
+import time
+
+# log the fps in this file
+fps_log_path = "fps_log.csv"
+with open(fps_log_path, mode="w", newline="") as f:
+    writer = csv.writer(f)
+    writer.writerow(["frame_index", "timestamp", "fps"])
 
 BASE_DIR = Path(__file__).parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -248,7 +258,7 @@ def compute_optical_flow(frames_dir, faces_dict, alg="lkt-mp"):
 
 # The landmark indices for each eye for EAR were brought in from here:
 # https://github.com/Pushtogithub23/Eye-Blink-Detection-using-MediaPipe-and-OpenCV
-def detect_distractions(flow_maps, lm_dict):
+def detect_distractions(frames_dir, flow_maps, lm_dict):
     decisions = {}
     closed_seq = []
     prev_state = "straight"
@@ -334,7 +344,6 @@ def detect_distractions(flow_maps, lm_dict):
             decisions[frame_name]["transition_state"] = transition_state
             print(f"{frame_name}, mean_dx:{mean_dx}, mean_dy:{mean_dy}, head_state:{head_state}, transition_state:{transition_state}")
 
-
         # make the decision here. add some smoothing so that it is distracted_maybe for at least 4-5 frames before becoming distracted
         distracted = True
         decisions.setdefault(frame_name, {})["focus_state"] = "good"
@@ -346,7 +355,13 @@ def detect_distractions(flow_maps, lm_dict):
             else:
                 distracted_count = 0
                 decisions[frame_name]["focus_state"] = "good"
-        elif head_state != "straight" or decisions[frame_name]["eye_state"] == "closed":
+        elif head_state != "straight":
+            distracted_count += 1
+            decisions[frame_name]["focus_state"] = "careful"
+
+        # don't include this in previous conditional because we want to expedite the distracted decision
+        # if head is not straight and eyes are closed, we are basically doing +2
+        if decisions[frame_name]["eye_state"] == "closed":
             distracted_count += 1
             decisions[frame_name]["focus_state"] = "careful"
         
@@ -383,6 +398,11 @@ def detect_distractions(flow_maps, lm_dict):
 
     with open(os.path.join(BASE_DIR, "decisions.json"), "w") as f:
         json.dump(decisions, f, indent=4)
+
+    df = pd.DataFrame.from_dict(decisions, orient="index")
+    df.reset_index(inplace=True)
+    df.rename(columns={"index": "frame"}, inplace=True)
+
     return decisions
 
 def main():
@@ -397,13 +417,30 @@ def main():
         # have to set MJPG format otherwise it tries mpeg4 and doesnt work
         # use 'v4l2-ctl --device=/dev/video0 --list-formats-ext' to look at available formats for camera
         cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+        frame_index = 0
+        prev_time = 0
+
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
 
             frame = optical_flow_live.detect_distractions_live(frame)
+
+            # fps calculation
+            curr_time = time.time()
+            if prev_time is not None:
+                fps = 1/(curr_time-prev_time) if prev_time != 0 else 0
+            prev_time = curr_time
+
+            with open(fps_log_path, mode="a", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow([frame_index, curr_time, fps])
+            
+            frame_index += 1
+
             cv2.imshow("Distracted Driver Detector", frame)
+            
             # quit on q like ffmpeg
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -429,7 +466,52 @@ def main():
         else:
             flow_maps, lm_dict = compute_optical_flow(args.frames_dir, faces_dict)
 
-        detect_distractions(flow_maps, lm_dict)
+        if os.path.exists("decisions.json"):
+            out_dir = "./final_report/static/optical_flow/plots"
+            os.makedirs("./final_report/static/optical_flow/plots", exist_ok=True)
+
+            with open("decisions.json") as f:
+                decisions = json.load(f)
+
+            df = pd.DataFrame.from_dict(decisions, orient="index")
+            df.reset_index(inplace=True)
+            df.rename(columns={"index":"frame"}, inplace=True)
+
+            # timeline plot
+            state_map = {"good": 0, "careful": 1, "distracted": 2}
+            df["focus_num"] = df["focus_state"].map(state_map)
+
+            plt.figure(figsize=(12, 3))
+            sns.scatterplot(x=df.index, y="focus_num", hue="focus_state", data=df,
+                palette={"good": "green", "careful": "yellow", "distracted": "red"}, 
+                s=10, legend=False)
+
+            plt.yticks([0, 1, 2], ["good","careful","distracted"])
+            plt.title("Focus State Timeline")
+            plt.savefig(os.path.join(out_dir, "focus_state_timeline.png"))
+            plt.close()
+
+            # do heatmaps for these three
+            ct_head = pd.crosstab(df["head_state"], df["focus_state"])
+            ct_eye = pd.crosstab(df["eye_state"], df["focus_state"])
+            ct_transition = pd.crosstab(df["transition_state"], df["focus_state"])
+
+            fig, axes = plt.subplots(1, 3, figsize=(18, 5))  # 1 row, 3 columns
+
+            sns.heatmap(ct_head, annot=True, fmt="d", cmap="YlGnBu", ax=axes[0])
+            axes[0].set_title("Head vs Focus State")
+
+            sns.heatmap(ct_eye, annot=True, fmt="d", cmap="YlGnBu", ax=axes[1])
+            axes[1].set_title("Eye vs Focus State")
+
+            sns.heatmap(ct_transition, annot=True, fmt="d", cmap="YlGnBu", ax=axes[2])
+            axes[2].set_title("Transition vs Focus State")
+
+            plt.tight_layout()
+            plt.savefig(os.path.join(out_dir, "focus_state_comparisons.png"))
+            plt.close()
+        else:
+            detect_distractions(args.frames_dir, flow_maps, lm_dict)
 
         print(len(faces_dict))
     pass

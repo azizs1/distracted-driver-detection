@@ -126,7 +126,7 @@ def detect_distractions_live(frame):
             
             dx = nose[0]-(left_eye_corner[0]+right_eye_corner[0])/2
             dy = nose[1]-(left_eye_corner[1]+right_eye_corner[1])/2
-            eye_dist = max(1e-6, right_eye_corner[0]-left_eye_corner[0])
+            eye_dist = max(0, right_eye_corner[0]-left_eye_corner[0])
             yaw = dx/eye_dist
             pitch = dy/eye_dist
 
@@ -149,12 +149,20 @@ def detect_distractions_live(frame):
                 else:
                     distracted_count = 0
                     focus_state = "good"
-            elif head_state != "straight" or eye_state == "closed":
+            elif head_state != "straight":
+                distracted_count += 1
+                focus_state = "careful"
+
+            # don't include this in previous conditional because we want to expedite the distracted decision
+            # if head is not straight and eyes are closed, we are basically doing +2
+            if eye_state == "closed":
                 distracted_count += 1
                 focus_state = "careful"
             
             if distracted_count > 30:
                 focus_state = "distracted"
+
+            print(f"yaw:{yaw}, pitch:{pitch}, head_state:{head_state}, eye_state:{eye_state}, decision:{focus_state}")
 
             # overlay some current stats with final decision
             cv2.putText(frame, f"Eyes: {eye_state}", (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 3, cv2.LINE_AA)

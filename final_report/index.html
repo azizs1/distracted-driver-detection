@@ -187,10 +187,13 @@
             This step in the pipeline is fairly straightforward, and largely consists of thresholding EAR values, yaw and pitch values, and making a decision tree to
             determine the final state of the driver. Eye aspect ratio is a formula that was proposed to detect eye closures [3]:
             $$\mathrm{EAR} = \frac{\lVert \mathbf{p}_2 - \mathbf{p}_6 \rVert + \lVert \mathbf{p}_3 - \mathbf{p}_5 \rVert}{2 \lVert \mathbf{p}_1 - \mathbf{p}_4 \rVert}$$
-            This allowed us to use an effective and proven method of understanding when the user is closing their eyes on each frame. The yaw and pitch values were derived by
+            This allowed us to use an effective and proven method of understanding when the user is closing their eyes on each frame. The optical flow was used to find 
+            transition states that cause a frame to be labelled "careful" if it indicated that the original state of the driver's head was facing straight. This allowed for 
+            a smoother transition into determining when potentially "distracted" frames were coming up. The yaw and pitch values were derived by
             using the midpoint between the eyes and the nose to determine head orientation. Through trial and error, effective thresholds were found with a light smoothing 
             applied to account for blinking and slight movements that do not fully cause a driver to be distracted, but if maintained for a lenghty amount of time, 
-            could represent a distracted driver.
+            could represent a distracted driver. One thing to note here is that, unlike the CNNs, there were no specific labels, so it is a combination of these thresholds
+            and decision tree to make the binary classification between distracted or not (the "careful" label is ultimately the same as "good").
         </p>
     </section>
 
@@ -236,7 +239,7 @@
         </div>
         <h3>Experiments</h3>
         <p>
-            Our ultimate goal will be real-time identification of dangerous driving behaviors, and we will attempt accomplishing this in three different ways:
+            We have completed three different experimental approach to achieve our overall goal of real-time identification of dangerous driving:
         </p>
         <ul>
             <li>Deep learning using a pre-weighted model (i.e. resnet18)</li>
@@ -258,16 +261,96 @@
         </p>
         <h4>Landmarks and Optical Flow Analysis</h4>
         <p>
-            This experiment will focus on using optical flow to detect motion-based indicators of distracted driving, such as hand movement, head turning, and signs of fatigue. Unlike the deep learning methods, this approach does not rely on labeled image classification but instead uses frame-to-frame motion estimation to detect behavior.
-            We will simulate these behaviors while parked and log the system's ability to detect them accurately. Success will be measured by the system's responsiveness and its ability to correctly identify motion-based behaviors without excessive false positives. This method will also be evaluated for its feasibility on the NVIDIA Jetson Nano in terms of real-time performance and resource usage.
+            This approach was largely qualitative as it was not feasible to manually label each of the thousands of frames for analysis, but we had two main experimental setups for this approach.
+            The first was live testing where the code is run and computations happen on the current frame, which performed quite well with no issues in video quality or lag.
         </p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/optical_flow/plots/fps_timeline.png" alt="FPS Timeline" style="width:700px; height:auto;">
+                <figcaption>FPS Timeline with a Jetson Nano and 720p Webcam</figcaption>
+            </figure>
+        </div>
+        <p>
+            Live testing was conducted both on standard PCs and on a Jetson Nano running an Ubuntu image. In all cases, the video playback was smooth with no visible choppiness.
+            As seen above, other than a few jumps, the FPS was consistently between 10 and 15 FPS largely as a consequence of how the FPS measurement was done. 
+            To highlight the true performance, the smoothed FPS has also been plotted to show the consistent frame rate that this approach was able to achieve.
+        </p>
+        <p>
+            The second experimental setup was using a pre-recorded MP4 file. This was the most used setup as it allowed for a consistent video that could be used to test our different
+            approaches and better compare the outputs. Using the optical flow method the video that is in the <a href="#qual-results">Qualitative Results</a> section, we plotted
+            the heatmaps seen below.
+        </p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/optical_flow/plots/focus_state_comparisons.png" alt="Focus State Heatmps">
+                <figcaption>Heatmaps of the Characterizing Components vs Focus State</figcaption>
+            </figure>
+        </div>
+        <p>
+            As expected, the most common focus states for the head were "good" and "distracted" with the "careful" state allowing for some nuance in the driver's actions. While the
+            main strategy was if the head is facing straight and the eyes are open, the user is focused and not distracted, we can see that the user was still determined to be distracted
+            if they were facing straight ahead due to eyes closing or lateral motion vectors causing the system to flag that frame as "careful" or possibly even "distracted" if the driver
+            was in that position for multiple consecutive frames. Another interesting observation with these heatmaps is with "Transition vs Focus State" where we can see that most of the 
+            distractions were made in the section with no transition, indicating that the user spent most of the final decisions were made when the user was not transitioning between head
+            orientations
+        </p>
+        <p>
+            As mentioned in the approach, thresholds formed the majority of tunable parameters for this model. While the MediaPipe face detection and the actual Lucas-Kanade optical flow
+            functions had many parameters, we set these early on and did not have to vary them to enhance the functionality of the overall detector. The following are the thresholds that
+            were manipulated as part of testing:
+            <ul>
+                <li>Lateral Flow</li>
+                <li>Vertical Flow</li>
+                <li>EAR</li>
+                <li>Yaw</li>
+                <li>Pitch</li>
+                <li>Eye Closed Count</li>
+                <li>Distracted Count</li>
+            </ul>
+        </p>
+        <p>
+            Manual testing was used to determine the optimal values for each of these thresholds, with EAR being the most straightforward to determine whether a driver's eyes were
+            open or closed. Flow was also fairly straightforward, but did require refinement to ensure that movements that were a very slight adjustment were not captured, while also
+            ensuring that larger movements were captured. The current values (of 3 for average lateral flow and 5 for average vertical flow) worked well and were assessed at the same
+            time to output one directional label. The lateral directions were given priority as this was where most of the distractions happened, i.e. looking in the upper right would
+            give a transition label of "turning right" over "looking up," but this set of labels could easily have been expanded to include more directions. In the images below,
+            we see that a lower vertical flow threshold contributes to sensitive vertical transition decisions where visually the driver's head orientation did not seem to change, but
+            the detector picks up on the slight downward flow.
+        </p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/optical_flow/experiments/final_frame_805_3dy.png" alt="3 dy" style="width:400px; height:auto;">
+                <figcaption>Test Threshold for Average Vertical Flow of 3</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/experiments/final_frame_805_5dy.png" alt="5 dy" style="width:400px; height:auto;">
+                <figcaption>Used Threshold for Average Vertical Flow of 5</figcaption>
+            </figure>
+        </div>
+        <p>
+            The counts for eye closures and distractions were originally implemented to allow for the driver to turn left to check the mirrors or capture 
+            blinks. If a driver exceeds 30 frames in this middle state, they are considered to be a "distracted" driver. Without these counts, the detector would be very quick to assign
+            "detected" decisions, even if the user was simply checking their rear-view mirror.
+            Yaw and pitch thresholds were more difficult to determine but the intention was to capture a range of yaw and pitch that would be considered "normal" movement that an 
+            undistracted driver would do. This was challenging as different people had different ranges and it was heavily dependent on the camera position. When setting up the camera,
+            we had to be sure that the driver was in a fixed position in front of the camera looking straight, otherwise they would appear as slightly leaning in one direction or another,
+            causing a "distracted" decision. As seen below, the left image had a very slight left movement that caused the lower yaw threshold of 0.01 to trigger and mark the frame
+            as potentially dangeorous, while the yaw threshold that is actually implemented maintained a "good" focus state throughout this.
+        </p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/optical_flow/experiments/final_frame_1448_0.05yaw.png" alt="0.05 yaw" style="width:400px; height:auto;">
+                <figcaption>Test 0.05 Yaw Threshold</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/experiments/final_frame_1448_0.1yaw.png" alt="0.1 yaw" style="width:400px; height:auto;">
+                <figcaption>Used 0.1 Yaw Threshold</figcaption>
+            </figure>
+        </div>
         </p>
         <h4>Final Assessment</h4>
         <p>
-            A comparison of these three methods will be performed at the conclusion of the implementations of each of them and be assessed based on the reliability of each method in 
-            a real-time usecase, as well as the accuracy of each of these methods. Comparing deep learning methods with the optical flow analysis method can allow for a greater understanding of the strengths and weakness
-            of each of these methods in the context of overall accuracy, as well as performance in a real-time scenario. When performing real-time testing, we will set up the camera and NVIDIA Jetson Nano system in our own cars 
-            and evaluate the number of behaviors that are able to be picked up by each method.
+            Ultimately, the approach that made use of 
         </p>
     </section>
 
