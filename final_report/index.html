@@ -55,7 +55,7 @@
             developed two different approaches to capturing and identifying unsafe driver behavior for proactive in-vehicle safety
             interventions. Using deep learning methods, we obtained a maximum of 96% test accuracy with a RESNET based classifier and
             92.7% with a custom CNN. While specific accuracy statistics were not feasible due to the qualitative method of the landmark and optical
-            flow method, it performed reasonably well in a live environment, but did require a lot of threshold tuning which was sometimes inconsistent.
+            flow method, it performed fairly well in a live environment, but did require a lot of threshold tuning which was sometimes inconsistent.
         </p>
     </section>
 
@@ -128,7 +128,7 @@
         <h4>Optical Flow Analysis</h4>
         <ul>
             <li>Extract facial landmarks from consecutive frames using MediaPipe's face mesh.</li>
-            <li>Apply Lucas-Kanade optical flow (cv2.calcOpticalFlowPyrLK) to track landmark displacement between frames.</li>
+            <li>Apply Lucas-Kanade optical flow (<code>cv2.calcOpticalFlowPyrLK</code>) to track landmark displacement between frames.</li>
             <li>Compute average horizontal (dx) and vertical (dy) shifts to infer head movement.</li>
             <li>Threshold displacements to classify transitions in one of the following states:
                 <ul>
@@ -144,7 +144,7 @@
             The initial approach involved making use of Farneback optical flow, but even with the cropped ROI, this was far too computationally expensive. Running live
             was very slow and eventually crashed, and running with an MP4 file caused crashes as well, doing about 2000 frames in 20 minutes. For this reason, we switched
             to using sparse optical flow, the Lucas-Kanade algorithm, which ran much faster and was usable for live detection. The initial implementation made use of
-            cv2.goodFeaturesToTrack, which uses the Shi-Tomasi corner detection algorithm, but the features detected with this were not great (click on the second image to expand).
+            <code>cv2.goodFeaturesToTrack</code>, which uses the Shi-Tomasi corner detection algorithm, but the features detected with this were not great (click on the second image to expand).
             Largely due to the use of the NIR image, it detected high intensity locations such as the shiny metal component of the headrest behind the face, and occasionally,
             eyes.
         </p>
@@ -347,10 +347,17 @@
                 <figcaption>Used 0.1 Yaw Threshold</figcaption>
             </figure>
         </div>
+        <p>
+            Overall, this approach worked very well despite having to do a fair amount of tuning and testing of thresholds as it relied on facial position and eye closure state to
+            determine the focus state of the driver. While there are still flaws with selecting the right thresholds, there is great potential to move forward with an approach 
+            based on these methods, possibly implementing a live calibration phase before each use that acclimates the detector to what ranges can be expected for a particular
+            user's focus states.
+        </p>
         </p>
         <h4>Final Assessment</h4>
         <p>
-            Ultimately, the approach that made use of 
+            Ultimately, the approach that made use of landmarks and optical flow was a far more reliable method, giving much better live results, as well as being suitable to any
+            type of camera that is used. The deep learning approach returned excellent accuracy scores, but struggled on a new custom example, as well as when testing live.
         </p>
     </section>
 
