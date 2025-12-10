@@ -55,7 +55,7 @@
             developed two different approaches to capturing and identifying unsafe driver behavior for proactive in-vehicle safety
             interventions. Using deep learning methods, we obtained a maximum of 96% test accuracy with a RESNET based classifier and
             92.7% with a custom CNN. While specific accuracy statistics were not feasible due to the qualitative method of the landmark and optical
-            flow method, it performed reasonably well in a live environment, but did require a lot of threshold tuning which was sometimes inconsistent.
+            flow method, it performed fairly well in a live environment, but did require a lot of threshold tuning which was sometimes inconsistent.
         </p>
     </section>
 
@@ -368,7 +368,7 @@
         <h4>Optical Flow Analysis</h4>
         <ul>
             <li>Extract facial landmarks from consecutive frames using MediaPipe's face mesh.</li>
-            <li>Apply Lucas-Kanade optical flow (cv2.calcOpticalFlowPyrLK) to track landmark displacement between frames.</li>
+            <li>Apply Lucas-Kanade optical flow (<code>cv2.calcOpticalFlowPyrLK</code>) to track landmark displacement between frames.</li>
             <li>Compute average horizontal (dx) and vertical (dy) shifts to infer head movement.</li>
             <li>Threshold displacements to classify transitions in one of the following states:
                 <ul>
@@ -384,7 +384,7 @@
             The initial approach involved making use of Farneback optical flow, but even with the cropped ROI, this was far too computationally expensive. Running live
             was very slow and eventually crashed, and running with an MP4 file caused crashes as well, doing about 2000 frames in 20 minutes. For this reason, we switched
             to using sparse optical flow, the Lucas-Kanade algorithm, which ran much faster and was usable for live detection. The initial implementation made use of
-            cv2.goodFeaturesToTrack, which uses the Shi-Tomasi corner detection algorithm, but the features detected with this were not great (click on the second image to expand).
+            <code>cv2.goodFeaturesToTrack</code>, which uses the Shi-Tomasi corner detection algorithm, but the features detected with this were not great (click on the second image to expand).
             Largely due to the use of the NIR image, it detected high intensity locations such as the shiny metal component of the headrest behind the face, and occasionally,
             eyes.
         </p>
@@ -427,10 +427,13 @@
             This step in the pipeline is fairly straightforward, and largely consists of thresholding EAR values, yaw and pitch values, and making a decision tree to
             determine the final state of the driver. Eye aspect ratio is a formula that was proposed to detect eye closures [3]:
             $$\mathrm{EAR} = \frac{\lVert \mathbf{p}_2 - \mathbf{p}_6 \rVert + \lVert \mathbf{p}_3 - \mathbf{p}_5 \rVert}{2 \lVert \mathbf{p}_1 - \mathbf{p}_4 \rVert}$$
-            This allowed us to use an effective and proven method of understanding when the user is closing their eyes on each frame. The yaw and pitch values were derived by
+            This allowed us to use an effective and proven method of understanding when the user is closing their eyes on each frame. The optical flow was used to find 
+            transition states that cause a frame to be labelled "careful" if it indicated that the original state of the driver's head was facing straight. This allowed for 
+            a smoother transition into determining when potentially "distracted" frames were coming up. The yaw and pitch values were derived by
             using the midpoint between the eyes and the nose to determine head orientation. Through trial and error, effective thresholds were found with a light smoothing 
             applied to account for blinking and slight movements that do not fully cause a driver to be distracted, but if maintained for a lenghty amount of time, 
-            could represent a distracted driver.
+            could represent a distracted driver. One thing to note here is that, unlike the CNNs, there were no specific labels, so it is a combination of these thresholds
+            and decision tree to make the binary classification between distracted or not (the "careful" label is ultimately the same as "good").
         </p>
     </section>
 
@@ -476,129 +479,130 @@
         </div>
         <h3>Experiments</h3>
         <p>
-            Our ultimate goal will be real-time identification of dangerous driving behaviors, and we will attempt accomplishing this in three different ways:
+            We have completed three different experimental approach to achieve our overall goal of real-time identification of dangerous driving:
         </p>
         <ul>
             <li>Deep learning using a pre-weighted model (i.e. resnet18)</li>
             <li>Deep learning using a custom-built CNN</li>
             <li>Optical flow analysis</li>
         </ul>
-        <h3>Deep Learning Experiments</h3>
-            <p>
-                We trained multiple deep learning models and variants on this dataset, exploring
-                different preprocessing pipelines, data balancing strategies, and optimizers.
-                The two main architectures are the custom CNN and a ResNet-50 model fine-tuned
-                with transfer learning.
-            </p>
+        <h4>Deep Learning Experiments</h4>
+        <p>
+            We trained multiple deep learning models and variants on this dataset, exploring
+            different preprocessing pipelines, data balancing strategies, and optimizers.
+            The two main architectures are the custom CNN and a ResNet-50 model fine-tuned
+            with transfer learning.
+        </p>
 
-            <h4>Custom CNN Training Variants</h4>
-            <p>
-                For the custom CNN, we experimented with how data augmentation and class balancing
-                affect convergence and generalization. In particular, we varied:
-            </p>
-            <ul>
-                <li>Whether to use a class-balanced <code>WeightedRandomSampler</code> with replacement;</li>
-                <li>Whether to include Gaussian blur in the augmentation pipeline.</li>
-            </ul>
-            <p>
-                The plots below show training and validation accuracy/loss curves for three key
-                configurations of the custom CNN:
-            </p>
+        <h5>Custom CNN Training Variants</h5>
+        <p>
+            For the custom CNN, we experimented with how data augmentation and class balancing
+            affect convergence and generalization. In particular, we varied:
+        </p>
+        <ul>
+            <li>Whether to use a class-balanced <code>WeightedRandomSampler</code> with replacement;</li>
+            <li>Whether to include Gaussian blur in the augmentation pipeline.</li>
+        </ul>
+        <br>
+        <p>
+            The plots below show training and validation accuracy/loss curves for three key
+            configurations of the custom CNN:
+        </p>
 
-            <div class="image-grid">
-                <figure>
-                    <img src="./static/Deep_Learning/Plots/90% no color aug guassian weighted random sampler.png"
-                        alt="Custom CNN with WeightedRandomSampler + Gaussian Blur">
-                    <figcaption>Custom CNN class-balanced sampler + Gaussian blur (~90% validation accuracy).</figcaption>
-                </figure>
-                <figure>
-                    <img src="./static/Deep_Learning/Plots/90% no color aug.png"
-                        alt="Custom CNN without Gaussian Blur">
-                    <figcaption>Custom CNN same setup but without Gaussian blur (~90% validation accuracy).</figcaption>
-                </figure>
-                <figure>
-                    <img src="./static/Deep_Learning/Plots/92_7% no color guassian blur.png"
-                        alt="Custom CNN with Gaussian Blur, best run">
-                    <figcaption>Custom CNN final configuration with Gaussian blur (~92.7% validation accuracy).</figcaption>
-                </figure>
-            </div>
-            <p>
-                Initially, we attempted to use a class-balanced <code>WeightedRandomSampler</code> with replacement,
-                under the assumption that the dataset was significantly imbalanced. While the class distribution
-                is not perfectly uniform, it is not severely imbalanced in the sense seen in real-world datasets
-                where one or more classes may contain only a very small number of samples.
-            </p>
-            <p>
-                In practice, the weighted sampling strategy duplicated images from the less frequent classes,
-                which increased redundancy in the training data and ultimately hurt convergence rather than
-                improving it. As a result, the model trained with the weighted sampler did not generalize as well
-                as expected and did the worst on testing data compared to the others.
-            </p>
-            <p>
-                The remaining two configurations were therefore trained without a weighted random sampler and
-                instead relied on the natural class distribution of the dataset. Between these two runs, the key
-                difference was the use of Gaussian blur as a data augmentation. The model trained without Gaussian
-                blur served as a baseline, while the inclusion of Gaussian blur improved robustness to mild image
-                noise and variations in focus. This final configuration achieved the best validation performance
-                and the smallest gap between training and validation curves.
-            </p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/Deep_Learning/Plots/90_no_color_aug_gaussian_weighted_random_sampler.png"
+                    alt="Custom CNN with WeightedRandomSampler + Gaussian Blur">
+                <figcaption>Custom CNN class-balanced sampler + Gaussian blur (~90% validation accuracy).</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/Deep_Learning/Plots/90_no_color_aug.png"
+                    alt="Custom CNN without Gaussian Blur">
+                <figcaption>Custom CNN same setup but without Gaussian blur (~90% validation accuracy).</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/Deep_Learning/Plots/92_7_no_color_gaussian_blur.png"
+                    alt="Custom CNN with Gaussian Blur, best run">
+                <figcaption>Custom CNN final configuration with Gaussian blur (~92.7% validation accuracy).</figcaption>
+            </figure>
+        </div>
+        <p>
+            Initially, we attempted to use a class-balanced <code>WeightedRandomSampler</code> with replacement,
+            under the assumption that the dataset was significantly imbalanced. While the class distribution
+            is not perfectly uniform, it is not severely imbalanced in the sense seen in real-world datasets
+            where one or more classes may contain only a very small number of samples.
+        </p>
+        <p>
+            In practice, the weighted sampling strategy duplicated images from the less frequent classes,
+            which increased redundancy in the training data and ultimately hurt convergence rather than
+            improving it. As a result, the model trained with the weighted sampler did not generalize as well
+            as expected and did the worst on testing data compared to the others.
+        </p>
+        <p>
+            The remaining two configurations were therefore trained without a weighted random sampler and
+            instead relied on the natural class distribution of the dataset. Between these two runs, the key
+            difference was the use of Gaussian blur as a data augmentation. The model trained without Gaussian
+            blur served as a baseline, while the inclusion of Gaussian blur improved robustness to mild image
+            noise and variations in focus. This final configuration achieved the best validation performance
+            and the smallest gap between training and validation curves.
+        </p>
 
-            <h4>Batch Size Selection</h4>
-            <p>
-                We also tuned the batch size based on both GPU utilization and end-to-end epoch time.
-                Using NVIDIA GPU monitoring tools during training, we measured how long one epoch took
-                for different batch sizes:
-            </p>
-            <ul>
-                <li>Batch size 8: ~276.27 seconds per epoch</li>
-                <li>Batch size 16: ~248.52 seconds per epoch</li>
-                <li>Batch size 32: ~467.30 seconds per epoch</li>
-            </ul>
-            <p>
-                A batch size of 16 achieved the best trade-off: it saturated the GPU reasonably well
-                while keeping each epoch short. Smaller batches under-utilized the GPU, and larger
-                batches actually increased epoch time due to memory pressure and less efficient
-                scheduling. For all subsequent experiments, we used <strong>batch size 16</strong>.
-            </p>
+        <h5>Batch Size Selection</h5>
+        <p>
+            We also tuned the batch size based on both GPU utilization and end-to-end epoch time.
+            Using NVIDIA GPU monitoring tools during training, we measured how long one epoch took
+            for different batch sizes:
+        </p>
+        <ul>
+            <li>Batch size 8: ~276.27 seconds per epoch</li>
+            <li>Batch size 16: ~248.52 seconds per epoch</li>
+            <li>Batch size 32: ~467.30 seconds per epoch</li>
+        </ul>
+        <p>
+            A batch size of 16 achieved the best trade-off: it saturated the GPU reasonably well
+            while keeping each epoch short. Smaller batches under-utilized the GPU, and larger
+            batches actually increased epoch time due to memory pressure and less efficient
+            scheduling. For all subsequent experiments, we used <strong>batch size 16</strong>.
+        </p>
 
-            <h4>ResNet-50 Transfer Learning: SGD vs Adam</h4>
-            <p>
-                For the transfer-learning model (Modified ResNet-50), we compared stochastic gradient
-                descent (SGD) with momentum against the Adam optimizer. In both cases, all layers up to
-                <code>layer3</code> were frozen, and training was restricted to <code>layer4</code> and
-                the final fully connected layer.
-            </p>
+        <h5>ResNet-50 Transfer Learning: SGD vs Adam</h5>
+        <p>
+            For the transfer-learning model (Modified ResNet-50), we compared stochastic gradient
+            descent (SGD) with momentum against the Adam optimizer. In both cases, all layers up to
+            <code>layer3</code> were frozen, and training was restricted to <code>layer4</code> and
+            the final fully connected layer.
+        </p>
 
-            <div class="image-grid">
-                <figure>
-                    <img src="./static/Deep_Learning/Plots/91_7 resnet SGD.png"
-                        alt="ResNet-50 training curves with SGD">
-                    <figcaption>ResNet-50 SGD (~91.7% validation accuracy, slow convergence).</figcaption>
-                </figure>
-                <figure>
-                    <img src="./static/Deep_Learning/Plots/96% resnet adam.png"
-                        alt="ResNet-50 training curves with Adam">
-                    <figcaption>ResNet-50 Adam (~96% validation accuracy, fast convergence).</figcaption>
-                </figure>
-            </div>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/Deep_Learning/Plots/91_7 resnet SGD.png"
+                    alt="ResNet-50 training curves with SGD">
+                <figcaption>ResNet-50 SGD (~91.7% validation accuracy, slow convergence).</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/Deep_Learning/Plots/96_resnet_adam.png"
+                    alt="ResNet-50 training curves with Adam">
+                <figcaption>ResNet-50 Adam (~96% validation accuracy, fast convergence).</figcaption>
+            </figure>
+        </div>
 
-            <p>
-                With SGD, validation accuracy starts relatively low and increases slowly over many epochs.
-                In contrast, Adam reaches over 90% validation accuracy within just two epochs and continues
-                to improve, ultimately achieving around 96% validation accuracy. This behavior is consistent
-                with the benefits of Adam in transfer-learning scenarios: it adapts individual learning rates
-                per parameter, which helps quickly fine-tune the small subset of trainable layers
-                (<code>layer4</code> and <code>fc</code>) while keeping the pretrained weights stable.
-            </p>
-            <p>
-                Because Adam finds a good region of the loss landscape much faster and yields higher final
-                validation accuracy, we chose <strong>Adam</strong> as the optimizer for the final
-                ResNet-50 model.
-            </p>
+        <p>
+            With SGD, validation accuracy starts relatively low and increases slowly over many epochs.
+            In contrast, Adam reaches over 90% validation accuracy within just two epochs and continues
+            to improve, ultimately achieving around 96% validation accuracy. This behavior is consistent
+            with the benefits of Adam in transfer-learning scenarios: it adapts individual learning rates
+            per parameter, which helps quickly fine-tune the small subset of trainable layers
+            (<code>layer4</code> and <code>fc</code>) while keeping the pretrained weights stable.
+        </p>
+        <p>
+            Because Adam finds a good region of the loss landscape much faster and yields higher final
+            validation accuracy, we chose <strong>Adam</strong> as the optimizer for the final
+            ResNet-50 model.
+        </p>
 
-        <h3>Deep Learning Results</h3>
+        <h4>Deep Learning Results</h4>
 
-        <h4>Custom CNN</h4>
+        <h5>Custom CNN</h5>
         <p>
             The best performing custom CNN model was evaluated on the held-out test set.
             The model achieved an overall test accuracy of <strong>91.57%</strong>, which
@@ -667,7 +671,7 @@
             catching fatigue-related cues, even if some false positives are introduced.
         </p>
 
-        <h4>ResNet-50 (Transfer Learning)</h4>
+        <h5>ResNet-50 (Transfer Learning)</h5>
         <p>
             The ResNet-50 transfer learning model outperformed the custom CNN across all evaluation
             metrics. It achieved a test accuracy of <strong>95.84%</strong>, once again closely matching
@@ -726,7 +730,7 @@
             to adapt effectively to subtle driver behaviors while maintaining robustness.
         </p>
 
-        <h3>Deep Learning Real-World Testing</h3>
+        <h5>Deep Learning Real-World Testing</h5>
         <p>
             Real world testing was conducted using pre recorded video input we also used for Optical Flow rather than the curated dataset
             used during training. This evaluation revealed significant differences between the two
@@ -745,7 +749,7 @@
         <div class="image-grid">
             <figure>
                 <img src="./static/Deep_Learning/Results/customCNN_misclassification.png"
-                    alt="Custom CNN real-world misclassification">
+                    alt="Custom CNN real-world misclassification" style="width:400px; height:auto;">
                 <figcaption>
                     Example frame showing the custom CNN incorrectly classifying safe driving behavior
                     as dangerous during real-world testing.
@@ -764,7 +768,152 @@
             However, the ResNet model struggled to accurately classify <em>Sleepy Driving</em> and
             showed confusion between visually similar behaviors. In several cases, drinking behavior
             was misclassified as <em>Sleepy Driving</em>, and some distracted driving instances were partially
-            recognized but assigned incorrect labels.
+            recognized but assigned incorrect labels as seen below in the <a href="#qual-results">Qualitative Results</a> section.
+        </p>
+        <p>
+            A major contributing factor to these failures is the difference between the training data
+            and the real world camera setup. The dataset images were captured using an infrared (IR)
+            camera with a specific sensor, exposure characteristics, cropping, and projection pattern.
+            These images often include visible IR projection dots and camera-specific noise patterns
+            that the models may have implicitly learned during training.
+        </p>
+
+        <p>
+            Our real world camera did not match these properties. Differences in field of view,
+            exposure, image normalization, sensor noise, and the absence of IR projection dots
+            significantly altered the appearance of the input data, leading to degraded performance.
+            This domain mismatch explains why even the ResNet-50 model, despite its superior dataset
+            performance, struggled during live real world inference.
+        </p>
+
+        <p>
+            When evaluated using a standard RGB webcam instead of an IR camera, both models performed
+            extremely poorly. Neither the custom CNN nor the ResNet-50 model was able to produce
+            meaningful classifications, as they were never trained on RGB images. The drastic
+            difference in inputs confirms that these models are highly sensitive to
+            the visual characteristics that they were trained on.
+        </p>
+
+        <p>
+            Overall, while ResNet-50 demonstrates better robustness than the custom CNN, these results
+            emphasize the importance of camera consistency and dataset diversity
+            when deploying deep learning models in real world applications.
+        </p>
+
+        <h4>Landmarks and Optical Flow Analysis</h4>
+        <p>
+            This approach was largely qualitative as it was not feasible to manually label each of the thousands of frames for analysis, but we had two main experimental setups for this approach.
+            The first was live testing where the code is run and computations happen on the current frame, which performed quite well with no issues in video quality or lag.
+        </p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/optical_flow/plots/fps_timeline.png" alt="FPS Timeline" style="width:700px; height:auto;">
+                <figcaption>FPS Timeline with a Jetson Nano and 720p Webcam</figcaption>
+            </figure>
+        </div>
+        <p>
+            Live testing was conducted both on standard PCs and on a Jetson Nano running an Ubuntu image with an NIR camera. This camera was chosen as it would be
+            more apt for cases of night-time driving to provide visibility where an RGB camera would not work.
+            In all cases, the video playback was smooth with no visible choppiness.
+            As seen above, other than a few jumps, the FPS was consistently between 10 and 15 FPS largely as a consequence of how the FPS measurement was done. 
+            To highlight the true performance, the smoothed FPS has also been plotted to show the consistent frame rate that this approach was able to achieve.
+        </p>
+        <p>
+            The second experimental setup was using a pre-recorded MP4 file. This was the most used setup as it allowed for a consistent video that could be used to test our different
+            approaches and better compare the outputs. Using the optical flow method the video that is in the <a href="#qual-results">Qualitative Results</a> section, we plotted
+            the heatmaps seen below.
+        </p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/optical_flow/plots/focus_state_comparisons.png" alt="Focus State Heatmps">
+                <figcaption>Heatmaps of the Characterizing Components vs Focus State</figcaption>
+            </figure>
+        </div>
+        <p>
+            As expected, the most common focus states for the head were "good" and "distracted" with the "careful" state allowing for some nuance in the driver's actions. While the
+            main strategy was if the head is facing straight and the eyes are open, the user is focused and not distracted, we can see that the user was still determined to be distracted
+            if they were facing straight ahead due to eyes closing or lateral motion vectors causing the system to flag that frame as "careful" or possibly even "distracted" if the driver
+            was in that position for multiple consecutive frames. Another interesting observation with these heatmaps is with "Transition vs Focus State" where we can see that most of the 
+            distractions were made in the section with no transition, indicating that the user spent most of the final decisions were made when the user was not transitioning between head
+            orientations
+        </p>
+        <p>
+            As mentioned in the approach, thresholds formed the majority of tunable parameters for this model. While the MediaPipe face detection and the actual Lucas-Kanade optical flow
+            functions had many parameters, we set these early on and did not have to vary them to enhance the functionality of the overall detector. The following are the thresholds that
+            were manipulated as part of testing:
+            <ul>
+                <li>Lateral Flow</li>
+                <li>Vertical Flow</li>
+                <li>EAR</li>
+                <li>Yaw</li>
+                <li>Pitch</li>
+                <li>Eye Closed Count</li>
+                <li>Distracted Count</li>
+            </ul>
+        </p>
+        <p>
+            Manual testing was used to determine the optimal values for each of these thresholds, with EAR being the most straightforward to determine whether a driver's eyes were
+            open or closed. Flow was also fairly straightforward, but did require refinement to ensure that movements that were a very slight adjustment were not captured, while also
+            ensuring that larger movements were captured. The current values (of 3 for average lateral flow and 5 for average vertical flow) worked well and were assessed at the same
+            time to output one directional label. The lateral directions were given priority as this was where most of the distractions happened, i.e. looking in the upper right would
+            give a transition label of "turning right" over "looking up," but this set of labels could easily have been expanded to include more directions. In the images below,
+            we see that a lower vertical flow threshold contributes to sensitive vertical transition decisions where visually the driver's head orientation did not seem to change, but
+            the detector picks up on the slight downward flow.
+        </p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/optical_flow/experiments/final_frame_805_3dy.png" alt="3 dy" style="width:400px; height:auto;">
+                <figcaption>Test Threshold for Average Vertical Flow of 3</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/experiments/final_frame_805_5dy.png" alt="5 dy" style="width:400px; height:auto;">
+                <figcaption>Used Threshold for Average Vertical Flow of 5</figcaption>
+            </figure>
+        </div>
+        <p>
+            The counts for eye closures and distractions were originally implemented to allow for the driver to turn left to check the mirrors or capture 
+            blinks. If a driver exceeds 30 frames in this middle state, they are considered to be a "distracted" driver. Without these counts, the detector would be very quick to assign
+            "detected" decisions, even if the user was simply checking their rear-view mirror.
+            Yaw and pitch thresholds were more difficult to determine but the intention was to capture a range of yaw and pitch that would be considered "normal" movement that an 
+            undistracted driver would do. This was challenging as different people had different ranges and it was heavily dependent on the camera position. When setting up the camera,
+            we had to be sure that the driver was in a fixed position in front of the camera looking straight, otherwise they would appear as slightly leaning in one direction or another,
+            causing a "distracted" decision. As seen below, the left image had a very slight left movement that caused the lower yaw threshold of 0.01 to trigger and mark the frame
+            as potentially dangeorous, while the yaw threshold that is actually implemented maintained a "good" focus state throughout this.
+        </p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/optical_flow/experiments/final_frame_1448_0.05yaw.png" alt="0.05 yaw" style="width:400px; height:auto;">
+                <figcaption>Test 0.05 Yaw Threshold</figcaption>
+            </figure>
+            <figure>
+                <img src="./static/optical_flow/experiments/final_frame_1448_0.1yaw.png" alt="0.1 yaw" style="width:400px; height:auto;">
+                <figcaption>Used 0.1 Yaw Threshold</figcaption>
+            </figure>
+        </div>
+        <p>
+            Overall, this approach worked very well despite having to do a fair amount of tuning and testing of thresholds as it relied on facial position and eye closure state to
+            determine the focus state of the driver. While there are still flaws with selecting the right thresholds, there is great potential to move forward with an approach 
+            based on these methods, possibly implementing a live calibration phase before each use that acclimates the detector to what ranges can be expected for a particular
+            user's focus states.
+        </p>
+        <h3>Final Assessment</h3>
+        <p>
+            Deep learning approaches, particularly ResNet-50 with transfer learning, are very strong with high-accuracy driver state classification when trained and tested with
+            consistent conditions. However, these models performed poorly on live examples, possibly due to their sensitivity to camera and lighting conditions. 
+            With optical flow and landmarks, though less sophisticated, we saw a robust and interpretable model, making them more suitable for immediate real-world deployment.
+            Ultimately, this approach was a far more reliable method, giving much better live results, as well as being suitable to any
+            type of camera that is used, despite the need for calibration of thresholds. The deep learning approach returned excellent accuracy scores, but struggled 
+            on new custom examples, as well as when testing live.
+        </p>
+    </section>
+
+    <section class="section" id="qual-results">
+        <h2>Qualitative Results</h2>
+        <h3>Deep Learning</h3>
+        <h3>Deep Learning</h3>
+        <p>
+            As discussed in the experiments and results section, the ResNet-50 model was able to detect some distracted driving behavoirs but completently failed on others or misclassified them.
+            Below are some example frames from the real world testing along with the model's prediction.
         </p>
         <div class="image-grid">
             <figure>
@@ -806,42 +955,24 @@
                 </figcaption>
             </figure>
         </div>
-        <p>
-            A major contributing factor to these failures is the difference between the training data
-            and the real world camera setup. The dataset images were captured using an infrared (IR)
-            camera with a specific sensor, exposure characteristics, cropping, and projection pattern.
-            These images often include visible IR projection dots and camera-specific noise patterns
-            that the models may have implicitly learned during training.
-        </p>
 
         <p>
-            Our real world camera did not match these properties. Differences in field of view,
-            exposure, image normalization, sensor noise, and the absence of IR projection dots
-            significantly altered the appearance of the input data, leading to degraded performance.
-            This domain mismatch explains why even the ResNet-50 model, despite its superior dataset
-            performance, struggled during live real world inference.
+            The full videos using the deep learning methods are below:
         </p>
-
-        <p>
-            When evaluated using a standard RGB webcam instead of an IR camera, both models performed
-            extremely poorly. Neither the custom CNN nor the ResNet-50 model was able to produce
-            meaningful classifications, as they were never trained on RGB images. The drastic
-            difference in inputs confirms that these models are highly sensitive to
-            the visual characteristics that they were trained on.
-        </p>
-
-        <p>
-            Overall, while ResNet-50 demonstrates better robustness than the custom CNN, these results
-            emphasize the importance of camera consistency and dataset diversity
-            when deploying deep learning models in real world applications.
-        </p>
-
-    </section>
-
-    <section class="section" id="qual-results">
-        <h2>Qualitative Results</h2>
-        <h3>Deep Learning</h3>
-
+        <div class="videos-wrapper">
+            <div class="video-container">
+                <video controls>
+                <source src="static/Deep_Learning/aziz_result1.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+                </video>
+            </div>
+            <div class="video-container">
+                <video controls>
+                <source src="static/Deep_Learning/Rayden_result1.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+                </video>
+            </div>
+        </div>
         <h3>Landmarks and Optical Flow Analysis</h3>
         <p>
             As discussed in the previous section this process includes three steps in the pipeline. In the successful "distracted" classification that follows, note that
@@ -947,6 +1078,15 @@
 
     <section class="section" id="conclusion">
         <h2>Conclusion</h2>
+        <p>
+            Throughout this project, we have explored two different approaches to detecting distracted driving: deep learning based methods and optical flow with
+            facial landmarks. While the deep learning methods returned high accuracy on datasets (~96%), they struggled to generalize and perform on custom videos
+            in real-world conditions with different lighting and camera setups. Improving this approach would likely consist of creating our own data to add on to
+            what is already present to provide more variety with more camera options. Optical flow with the use of landmarks gave much better results on live
+            examples, proving to be the more robust option between these two approaches. This method was simple and ran smoothly in a live case, but had many thresholds
+            that had to be tuned. In order to make this process better, calibrating it per camera setup to set thresholds live would return a much better result to account
+            for camera positioning and the driver's face relative to the camera.
+        </p>
     </section>
     
     <section class="section" id="references">

@@ -19,17 +19,3 @@ dependencies = [
     "torchsummary>=1.5.1",
     "tqdm>=4.67.1",
 ]
-
-[tool.uv]
-# Apply CUDA PyTorch only on Windows
-environments = ["sys_platform == 'win32'"]
-
-[[tool.uv.index]]
-name = "pytorch-cu121"
-url = "https://download.pytorch.org/whl/cu121"
-explicit = true
-
-[tool.uv.sources]
-torch = { index = "pytorch-cu121" }
-torchvision = { index = "pytorch-cu121" }
-torchaudio = { index = "pytorch-cu121" }
