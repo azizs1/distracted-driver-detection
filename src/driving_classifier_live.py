@@ -13,12 +13,6 @@ def preprocess_frame(frame, transform, device):
     frame = Image.fromarray(frame)
     tensor = transform(frame).unsqueeze(0)
     return tensor.to(device, non_blocking=True)
-# def preprocess_frame(frame, transform, device):
-#     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-#     frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
-#     frame = Image.fromarray(frame)
-#     tensor = transform(frame).unsqueeze(0)
-#     return tensor.to(device)
 
 
 @torch.no_grad()
@@ -55,23 +49,11 @@ def main():
     num_classes = len(CLASS_NAMES)
     model = load_model(args.arch, args.model, num_classes, device)
 
-    # img = cv2.imread("data/train/gA_1_s1_ir_face_mp4-1_jpg.rf.054a08cc8325b4f67b3c254e05aae9d2.jpg")
-    # img = cv2.imread("data/train/gA_1_s1_ir_face_mp4-54_jpg.rf.21afb5679bc2769946967554c0dff808.jpg")
-    # label, conf = predict(model, img, transform, CLASS_NAMES, device)
-    # print("Prediction:", label, "confidence:", conf)
-    # from train import evaluation
-
-    # val_loss, val_acc, val_prec, val_rec, val_f1, _, _ = evaluation(
-    #     model, test_loader, verbose=True, device=device
-    # )
-    # print("Sanity check on test set:",
-    #     "Acc", val_acc, "Prec", val_prec, "Rec", val_rec, "F1", val_f1)
-
     if args.live:
         print("Starting live video feed...")
         cap = cv2.VideoCapture(args.camera)
-        # cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)
-        # cap.set(cv2.CAP_PROP_EXPOSURE, -6)
+        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)
+        cap.set(cv2.CAP_PROP_EXPOSURE, -6)
     else:
         print(f"Opening video file {args.video}...")
         cap = cv2.VideoCapture(args.video)

@@ -41,7 +41,7 @@
                 <figcaption>A Distracted Driver on the Phone</figcaption>
             </figure>
             <figure>
-                <img src="./static/deep_learning/final2221.png" alt="Safe Driving" style="width:300px; height:auto;">
+                <img src="./static/Deep_Learning/Results/SaveDriving_Live.png" alt="Safe Driving" style="width:300px; height:auto;">
                 <figcaption>A Safe Driver</figcaption>
             </figure>
         </div>
@@ -802,6 +802,13 @@
                     The model confuses drinking with sleeping
                 </figcaption>
             </figure>
+            <figure>
+                <img src="./static/Deep_Learning/Results/Drinking_Live.png" alt="ResNet classifying drinking as drinking">
+                <figcaption>
+                    <strong>Drinking &rarr; Drinking</strong><br>
+                    The model correctly classifying drinking this time in a different enviroment.
+                </figcaption>
+            </figure>
         </div>
         <p>
             A major contributing factor to these failures is the difference between the training data
@@ -845,7 +852,9 @@
             </figure>
         </div>
         <p>
-            Live testing was conducted both on standard PCs and on a Jetson Nano running an Ubuntu image. In all cases, the video playback was smooth with no visible choppiness.
+            Live testing was conducted both on standard PCs and on a Jetson Nano running an Ubuntu image with an NIR camera. This camera was chosen as it would be
+            more apt for cases of night-time driving to provide visibility where an RGB camera would not work.
+            In all cases, the video playback was smooth with no visible choppiness.
             As seen above, other than a few jumps, the FPS was consistently between 10 and 15 FPS largely as a consequence of how the FPS measurement was done. 
             To highlight the true performance, the smoothed FPS has also been plotted to show the consistent frame rate that this approach was able to achieve.
         </p>
