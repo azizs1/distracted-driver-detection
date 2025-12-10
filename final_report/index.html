@@ -483,19 +483,118 @@
             <li>Deep learning using a custom-built CNN</li>
             <li>Optical flow analysis</li>
         </ul>
-        <h4>Deep Learning (Custom CNN)</h4>
-        <p>
-            The dataset used here will be the <a href="https://www.kaggle.com/datasets/zeyad1mashhour/driver-inattention-detection-dataset" target="_blank" rel="noopener noreferrer">Driver Inattention Detection Dataset</a> 
-            identified earlier in the proposal to train a model using PyTorch. This dataset is already split with 80% dedicated to training and 20% for testing and validation. We hope to achieve at least 85% test accuracy through the tuning of model hyperparameters
-            to consider this approach a successful one. Additionally, we want to ensure that this can be set up as a lightweight model to be used in real-time. Performance concerns may also impact overall accuracy when used in
-            a realistic scenario.
-        </p>
-        <h4>Deep Learning (Pre-weighted Model)</h4>
-        <p>
-            The same dataset that was used for the custom CNN will be used here. We expect that this model will be far more successful than the custom CNN, but we will continue to aim for 85% test accuracy after the transfer
-            learning phase. The resnet18 model is fairly lightweight so it should theoretically perform well in real-time. A comparison analysis will be performed between these two deep learning
-            approaches to observe how each differs and the results that they achieve.
-        </p>
+        <h3>Deep Learning Experiments</h3>
+            <p>
+                We trained multiple deep learning models and variants on this dataset, exploring
+                different preprocessing pipelines, data balancing strategies, and optimizers.
+                The two main architectures are the custom CNN and a ResNet-50 model fine-tuned
+                with transfer learning.
+            </p>
+
+            <h4>Custom CNN Training Variants</h4>
+            <p>
+                For the custom CNN, we experimented with how data augmentation and class balancing
+                affect convergence and generalization. In particular, we varied:
+            </p>
+            <ul>
+                <li>Whether to use a class-balanced <code>WeightedRandomSampler</code> with replacement;</li>
+                <li>Whether to include Gaussian blur in the augmentation pipeline.</li>
+            </ul>
+            <p>
+                The plots below show training and validation accuracy/loss curves for three key
+                configurations of the custom CNN:
+            </p>
+
+            <div class="image-grid">
+                <figure>
+                    <img src="./static/Deep_Learning/Plots/90% no color aug guassian weighted random sampler.png"
+                        alt="Custom CNN with WeightedRandomSampler + Gaussian Blur">
+                    <figcaption>Custom CNN – class-balanced sampler + Gaussian blur (~90% validation accuracy).</figcaption>
+                </figure>
+                <figure>
+                    <img src="./static/Deep_Learning/Plots/90% no color aug.png"
+                        alt="Custom CNN without Gaussian Blur">
+                    <figcaption>Custom CNN – same setup but without Gaussian blur (~90% validation accuracy).</figcaption>
+                </figure>
+                <figure>
+                    <img src="./static/Deep_Learning/Plots/92_7% no color guassian blur.png"
+                        alt="Custom CNN with Gaussian Blur, best run">
+                    <figcaption>Custom CNN – final configuration with Gaussian blur (~92.7% validation accuracy).</figcaption>
+                </figure>
+            </div>
+            <p>
+                Initially, we attempted to use a class-balanced <code>WeightedRandomSampler</code> with replacement,
+                under the assumption that the dataset was significantly imbalanced. While the class distribution
+                is not perfectly uniform, it is not severely imbalanced in the sense seen in real-world datasets
+                where one or more classes may contain only a very small number of samples.
+            </p>
+            <p>
+                In practice, the weighted sampling strategy duplicated images from the less frequent classes,
+                which increased redundancy in the training data and ultimately hurt convergence rather than
+                improving it. As a result, the model trained with the weighted sampler did not generalize as well
+                as expected.
+            </p>
+            <p>
+                The remaining two configurations were therefore trained without a weighted random sampler and
+                instead relied on the natural class distribution of the dataset. Between these two runs, the key
+                difference was the use of Gaussian blur as a data augmentation. The model trained without Gaussian
+                blur served as a baseline, while the inclusion of Gaussian blur improved robustness to mild image
+                noise and variations in focus. This final configuration achieved the best validation performance
+                and the smallest gap between training and validation curves.
+            </p>
+
+            <h4>Batch Size Selection</h4>
+            <p>
+                We also tuned the batch size based on both GPU utilization and end-to-end epoch time.
+                Using NVIDIA GPU monitoring tools during training, we measured how long one epoch took
+                for different batch sizes:
+            </p>
+            <ul>
+                <li>Batch size 8: ~276.27 seconds per epoch</li>
+                <li>Batch size 16: ~248.52 seconds per epoch</li>
+                <li>Batch size 32: ~467.30 seconds per epoch</li>
+            </ul>
+            <p>
+                A batch size of 16 achieved the best trade-off: it saturated the GPU reasonably well
+                while keeping each epoch short. Smaller batches under-utilized the GPU, and larger
+                batches actually increased epoch time due to memory pressure and less efficient
+                scheduling. For all subsequent experiments, we used <strong>batch size 16</strong>.
+            </p>
+
+            <h4>ResNet-50 Transfer Learning: SGD vs Adam</h4>
+            <p>
+                For the transfer-learning model (Modified ResNet-50), we compared stochastic gradient
+                descent (SGD) with momentum against the Adam optimizer. In both cases, all layers up to
+                <code>layer3</code> were frozen, and training was restricted to <code>layer4</code> and
+                the final fully connected layer.
+            </p>
+
+            <div class="image-grid">
+                <figure>
+                    <img src="./static/Deep_Learning/Plots/91_7 resnet SGD.png"
+                        alt="ResNet-50 training curves with SGD">
+                    <figcaption>ResNet-50 – SGD (~91.7% validation accuracy, slow convergence).</figcaption>
+                </figure>
+                <figure>
+                    <img src="./static/Deep_Learning/Plots/96% resnet adam.png"
+                        alt="ResNet-50 training curves with Adam">
+                    <figcaption>ResNet-50 – Adam (~96% validation accuracy, fast convergence).</figcaption>
+                </figure>
+            </div>
+
+            <p>
+                With SGD, validation accuracy starts relatively low and increases slowly over many epochs.
+                In contrast, Adam reaches over 90% validation accuracy within just two epochs and continues
+                to improve, ultimately achieving around 96% validation accuracy. This behavior is consistent
+                with the benefits of Adam in transfer-learning scenarios: it adapts individual learning rates
+                per parameter, which helps quickly fine-tune the small subset of trainable layers
+                (<code>layer4</code> and <code>fc</code>) while keeping the pretrained weights stable.
+            </p>
+            <p>
+                Because Adam finds a good region of the loss landscape much faster and yields higher final
+                validation accuracy, we chose <strong>Adam</strong> as the optimizer for the final
+                ResNet-50 model.
+            </p>
         <h4>Landmarks and Optical Flow Analysis</h4>
         <p>
             This experiment will focus on using optical flow to detect motion-based indicators of distracted driving, such as hand movement, head turning, and signs of fatigue. Unlike the deep learning methods, this approach does not rely on labeled image classification but instead uses frame-to-frame motion estimation to detect behavior.
