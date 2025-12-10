@@ -532,7 +532,7 @@
                 In practice, the weighted sampling strategy duplicated images from the less frequent classes,
                 which increased redundancy in the training data and ultimately hurt convergence rather than
                 improving it. As a result, the model trained with the weighted sampler did not generalize as well
-                as expected.
+                as expected and did the worst on testing data compared to the others.
             </p>
             <p>
                 The remaining two configurations were therefore trained without a weighted random sampler and
@@ -595,24 +595,147 @@
                 validation accuracy, we chose <strong>Adam</strong> as the optimizer for the final
                 ResNet-50 model.
             </p>
-        <h4>Landmarks and Optical Flow Analysis</h4>
+
+        <h3>Deep Learning Results</h3>
+
+        <h4>Custom CNN</h4>
         <p>
-            This experiment will focus on using optical flow to detect motion-based indicators of distracted driving, such as hand movement, head turning, and signs of fatigue. Unlike the deep learning methods, this approach does not rely on labeled image classification but instead uses frame-to-frame motion estimation to detect behavior.
-            We will simulate these behaviors while parked and log the system's ability to detect them accurately. Success will be measured by the system's responsiveness and its ability to correctly identify motion-based behaviors without excessive false positives. This method will also be evaluated for its feasibility on the NVIDIA Jetson Nano in terms of real-time performance and resource usage.
+            The best performing custom CNN model was evaluated on the held-out test set.
+            The model achieved an overall test accuracy of <strong>91.57%</strong>, which
+            closely matches the validation accuracy observed during training. This close
+            alignment between validation and test performance indicates good generalization
+            and minimal overfitting.
         </p>
-        </p>
-        <h4>Final Assessment</h4>
+
         <p>
-            A comparison of these three methods will be performed at the conclusion of the implementations of each of them and be assessed based on the reliability of each method in 
-            a real-time usecase, as well as the accuracy of each of these methods. Comparing deep learning methods with the optical flow analysis method can allow for a greater understanding of the strengths and weakness
-            of each of these methods in the context of overall accuracy, as well as performance in a real-time scenario. When performing real-time testing, we will set up the camera and NVIDIA Jetson Nano system in our own cars 
-            and evaluate the number of behaviors that are able to be picked up by each method.
+            The table below summarizes the overall performance of the custom CNN on the test set:
         </p>
+
+        <div class="cnn-architecture">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Accuracy</td><td>0.9157</td></tr>
+                    <tr><td>Precision (Macro Avg)</td><td>0.8909</td></tr>
+                    <tr><td>Recall (Macro Avg)</td><td>0.8914</td></tr>
+                    <tr><td>F1-score (Macro Avg)</td><td>0.8894</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p>
+            A per-class breakdown further illustrates how class distribution impacts performance:
+        </p>
+
+        <div class="cnn-architecture">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Class</th>
+                        <th>Precision</th>
+                        <th>Recall</th>
+                        <th>F1-score</th>
+                        <th>Support</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Dangerous Driving</td><td>0.98</td><td>0.99</td><td>0.99</td><td>301</td></tr>
+                    <tr><td>Distracted</td><td>0.84</td><td>0.88</td><td>0.86</td><td>152</td></tr>
+                    <tr><td>Drinking</td><td>0.95</td><td>0.80</td><td>0.87</td><td>25</td></tr>
+                    <tr><td>Safe Driving</td><td>0.92</td><td>0.90</td><td>0.91</td><td>412</td></tr>
+                    <tr><td>Sleepy Driving</td><td>0.79</td><td>0.83</td><td>0.81</td><td>69</td></tr>
+                    <tr><td>Yawn</td><td>0.86</td><td>0.96</td><td>0.91</td><td>26</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p>
+            Classes with a large number of training samples, such as <em>Safe Driving</em> and
+            <em>Dangerous Driving</em>, achieve high precision and recall. This indicates that
+            the model reliably recognizes these behaviors and rarely confuses them with other classes.
+        </p>
+        <p>
+            Minority classes show different behavior. The <em>Yawn</em>
+            class exhibits high recall but lower precision. This means the model successfully
+            detects most true yawning events but occasionally misclassifies other behaviors as yawns.
+            In practice, this reflects a conservative detection strategy. The model is effective at
+            catching fatigue-related cues, even if some false positives are introduced.
+        </p>
+
+        <h4>ResNet-50 (Transfer Learning)</h4>
+        <p>
+            The ResNet-50 transfer learning model outperformed the custom CNN across all evaluation
+            metrics. It achieved a test accuracy of <strong>95.84%</strong>, once again closely matching
+            the validation accuracy observed during training. This consistency confirms strong
+            generalization to never before seen data.
+        </p>
+
+        <div class="cnn-architecture">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Accuracy</td><td>0.9584</td></tr>
+                    <tr><td>Precision (Macro Avg)</td><td>0.9713</td></tr>
+                    <tr><td>Recall (Macro Avg)</td><td>0.9462</td></tr>
+                    <tr><td>F1-score (Macro Avg)</td><td>0.9578</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="cnn-architecture">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Class</th>
+                        <th>Precision</th>
+                        <th>Recall</th>
+                        <th>F1-score</th>
+                        <th>Support</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Dangerous Driving</td><td>0.98</td><td>0.99</td><td>0.99</td><td>301</td></tr>
+                    <tr><td>Distracted</td><td>0.97</td><td>0.84</td><td>0.90</td><td>152</td></tr>
+                    <tr><td>Drinking</td><td>1.00</td><td>0.96</td><td>0.98</td><td>25</td></tr>
+                    <tr><td>Safe Driving</td><td>0.94</td><td>0.98</td><td>0.96</td><td>412</td></tr>
+                    <tr><td>Sleepy Driving</td><td>0.94</td><td>0.90</td><td>0.92</td><td>69</td></tr>
+                    <tr><td>Yawn</td><td>1.00</td><td>1.00</td><td>1.00</td><td>26</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p>
+            Compared to the custom CNN, ResNet-50 significantly improves precision and recall for
+            underrepresented classes such as <em>Drinking</em>, <em>Sleepy Driving</em>, and
+            <em>Yawn</em>. The <em>Yawn</em> class achieves perfect precision and recall,
+            indicating that the model both detects yawning reliably and avoids false positives.
+        </p>
+        <p>
+            These improvements are driven by transfer learning from ImageNet, which provides strong
+            and generalizable visual features. Fine-tuning only the deepest layers helps ResNet-50
+            to adapt effectively to subtle driver behaviors while maintaining robustness.
+        </p>
+
+        <h3>Deep Learning Real-World Testing</h3>
+        <p>
+        </p>
+
     </section>
 
     <section class="section" id="qual-results">
         <h2>Qualitative Results</h2>
         <h3>Deep Learning</h3>
+
         <h3>Landmarks and Optical Flow Analysis</h3>
         <p>
             As discussed in the previous section this process includes three steps in the pipeline. In the successful "distracted" classification that follows, note that
