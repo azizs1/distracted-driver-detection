@@ -345,7 +345,7 @@ def detect_distractions(flow_maps, lm_dict):
             else:
                 distracted_count = 0
                 decisions[frame_name]["focus_state"] = "good"
-        elif head_state != "straight":
+        elif head_state != "straight" or decisions[frame_name]["eye_state"] != "closed":
             distracted_count += 1
             decisions[frame_name]["focus_state"] = "careful"
         

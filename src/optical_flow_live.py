@@ -149,7 +149,7 @@ def detect_distractions_live(frame):
                 else:
                     distracted_count = 0
                     focus_state = "good"
-            elif head_state != "straight":
+            elif head_state != "straight" or eye_state == "closed":
                 distracted_count += 1
                 focus_state = "careful"
             
