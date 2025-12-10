@@ -43,6 +43,7 @@ class customCNN(nn.Module):
         x = self.fc3(x)
         return x
 
+# Code from Homework 4 adapted for training and evaluation
 def train(model, loader, validation, criterion, optimizer, epochs=2, device="cpu", save_path="data/customcnn_model.pth"):
     '''Train a model from training data.
 

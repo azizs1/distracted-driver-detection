@@ -77,6 +77,18 @@ body {
     margin-bottom: 0.5rem;
 }
 
+.section h5 {
+    max-width: 75%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #444;
+    letter-spacing: 0.01em;
+}
+
 #approach ul {
     list-style-position: inside;
     padding-left: 0;
@@ -238,3 +250,35 @@ img.expanded {
   border: 2px solid #ccc;
   border-radius: 8px;
 }
+
+.cnn-architecture {
+    max-width: 75%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+    background-color: #ffffff;
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+.cnn-architecture table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.cnn-architecture th,
+.cnn-architecture td {
+    border: 1px solid #e2e2e2;
+    padding: 6px 10px;
+    text-align: left;
+}
+
+.cnn-architecture thead {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+
+
