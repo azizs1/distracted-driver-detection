@@ -509,17 +509,17 @@
                 <figure>
                     <img src="./static/Deep_Learning/Plots/90% no color aug guassian weighted random sampler.png"
                         alt="Custom CNN with WeightedRandomSampler + Gaussian Blur">
-                    <figcaption>Custom CNN – class-balanced sampler + Gaussian blur (~90% validation accuracy).</figcaption>
+                    <figcaption>Custom CNN class-balanced sampler + Gaussian blur (~90% validation accuracy).</figcaption>
                 </figure>
                 <figure>
                     <img src="./static/Deep_Learning/Plots/90% no color aug.png"
                         alt="Custom CNN without Gaussian Blur">
-                    <figcaption>Custom CNN – same setup but without Gaussian blur (~90% validation accuracy).</figcaption>
+                    <figcaption>Custom CNN same setup but without Gaussian blur (~90% validation accuracy).</figcaption>
                 </figure>
                 <figure>
                     <img src="./static/Deep_Learning/Plots/92_7% no color guassian blur.png"
                         alt="Custom CNN with Gaussian Blur, best run">
-                    <figcaption>Custom CNN – final configuration with Gaussian blur (~92.7% validation accuracy).</figcaption>
+                    <figcaption>Custom CNN final configuration with Gaussian blur (~92.7% validation accuracy).</figcaption>
                 </figure>
             </div>
             <p>
@@ -573,12 +573,12 @@
                 <figure>
                     <img src="./static/Deep_Learning/Plots/91_7 resnet SGD.png"
                         alt="ResNet-50 training curves with SGD">
-                    <figcaption>ResNet-50 – SGD (~91.7% validation accuracy, slow convergence).</figcaption>
+                    <figcaption>ResNet-50 SGD (~91.7% validation accuracy, slow convergence).</figcaption>
                 </figure>
                 <figure>
                     <img src="./static/Deep_Learning/Plots/96% resnet adam.png"
                         alt="ResNet-50 training curves with Adam">
-                    <figcaption>ResNet-50 – Adam (~96% validation accuracy, fast convergence).</figcaption>
+                    <figcaption>ResNet-50 Adam (~96% validation accuracy, fast convergence).</figcaption>
                 </figure>
             </div>
 
@@ -722,13 +722,113 @@
         </p>
         <p>
             These improvements are driven by transfer learning from ImageNet, which provides strong
-            and generalizable visual features. Fine-tuning only the deepest layers helps ResNet-50
+            and generalizable visual features. Fine tuning only the deepest layers helps ResNet-50
             to adapt effectively to subtle driver behaviors while maintaining robustness.
         </p>
 
         <h3>Deep Learning Real-World Testing</h3>
         <p>
+            Real world testing was conducted using pre recorded video input we also used for Optical Flow rather than the curated dataset
+            used during training. This evaluation revealed significant differences between the two
+            models and highlighted the challenges of deployment outside of a controlled training
+            environment.
         </p>
+
+        <p>
+            The custom CNN performed poorly during real-world testing. Despite achieving strong
+            validation and test accuracy on the dataset, the model failed to generalize and consistently
+            misclassified nearly all real world inputs as <em>Dangerous Driving</em>. This behavior
+            indicates that the model was overfitted to the training distribution and relied heavily on
+            dataset specific visual cues rather than robust, generalizable features.
+        </p>
+
+        <div class="image-grid">
+            <figure>
+                <img src="./static/Deep_Learning/Results/customCNN_misclassification.png"
+                    alt="Custom CNN real-world misclassification">
+                <figcaption>
+                    Example frame showing the custom CNN incorrectly classifying safe driving behavior
+                    as dangerous during real-world testing.
+                </figcaption>
+            </figure>
+        </div>
+
+        <p>
+            In contrast, the ResNet-50 model demonstrated improved robustness in real-world testing.
+            While still imperfect, it was able to correctly identify obvious cases of
+            <em>Safe Driving</em> in live input. The model also successfully detected some instances
+            of <em>Distracted Driving</em> while missing alot of others.
+        </p>
+
+        <p>
+            However, the ResNet model struggled to accurately classify <em>Sleepy Driving</em> and
+            showed confusion between visually similar behaviors. In several cases, drinking behavior
+            was misclassified as <em>Sleepy Driving</em>, and some distracted driving instances were partially
+            recognized but assigned incorrect labels.
+        </p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/Deep_Learning/Results/Resnet_SafeDriving.png" alt="ResNet correctly classifying safe driving">
+                <figcaption>
+                    <strong>Safe Driving &rarr; SafeDriving</strong><br>
+                    Example where ResNet correctly classifies an obvious safe driving frame.
+                </figcaption>
+            </figure>
+
+            <figure>
+                <img src="./static/Deep_Learning/Results/Resnet_SafeDriving_When_Sleeping.png" alt="ResNet failing to classify sleepy driving">
+                <figcaption>
+                    <strong>Sleepy Driving &rarr; Safe Driving</strong><br>
+                    The model fails to detect sleepy driving correctly.
+                </figcaption>
+            </figure>
+
+            <figure>
+                <img src="./static/Deep_Learning/Results/Resnet_DangerousDriving.png" alt="ResNet correctly classifying dangerous driving">
+                <figcaption>
+                    <strong>Dangerous &rarr; Dangerous</strong><br>
+                    Example where ResNet correctly identifies a dangerous driving behavior.
+                </figcaption>
+            </figure>
+
+            <figure>
+                <img src="./static/Deep_Learning/Results/Resnet_SleepyDriving_When_Drinking.png" alt="ResNet classifying drinking as sleeping">
+                <figcaption>
+                    <strong>Drinking &rarr; Sleeping</strong><br>
+                    The model confuses drinking with sleeping.
+                </figcaption>
+            </figure>
+        </div>
+        <p>
+            A major contributing factor to these failures is the difference between the training data
+            and the real world camera setup. The dataset images were captured using an infrared (IR)
+            camera with a specific sensor, exposure characteristics, cropping, and projection pattern.
+            These images often include visible IR projection dots and camera-specific noise patterns
+            that the models may have implicitly learned during training.
+        </p>
+
+        <p>
+            Our real world camera did not match these properties. Differences in field of view,
+            exposure, image normalization, sensor noise, and the absence of IR projection dots
+            significantly altered the appearance of the input data, leading to degraded performance.
+            This domain mismatch explains why even the ResNet-50 model, despite its superior dataset
+            performance, struggled during live real world inference.
+        </p>
+
+        <p>
+            When evaluated using a standard RGB webcam instead of an IR camera, both models performed
+            extremely poorly. Neither the custom CNN nor the ResNet-50 model was able to produce
+            meaningful classifications, as they were never trained on RGB images. The drastic
+            difference in inputs confirms that these models are highly sensitive to
+            the visual characteristics that they were trained on.
+        </p>
+
+        <p>
+            Overall, while ResNet-50 demonstrates better robustness than the custom CNN, these results
+            emphasize the importance of camera consistency and dataset diversity
+            when deploying deep learning models in real world applications.
+        </p>
+
 
     </section>
 
