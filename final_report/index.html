@@ -89,7 +89,247 @@
             of landmarks and optical flow analysis to characterize behavior. The approach differs for each with different success criteria for each method.
         </p>
         <h3>Deep Learning</h3>
-        
+        <p>
+            The deep learning approach involved training two different convolutional neural networks (CNNs)
+            to classify images of drivers into 6 different categories based on their behavior.
+            This method leverages the power of deep learning to automatically learn features from the images
+            that are indicative of distracted driving.
+        </p>
+
+        <h4>Preprocessing</h4>
+        <p>
+            All images are first converted from raw pixel data into PyTorch tensors and resized to a consistent
+            resolution of <code>224 × 224</code> pixels. This unified resolution makes the data compatible with
+            both the custom CNN and the ResNet-based model.
+        </p>
+        <p>
+            To improve generalization, the training set is augmented with random transformations such as:
+        </p>
+        <ul>
+            <li>Random horizontal flips</li>
+            <li>Random rotations</li>
+            <li>Color jitter (brightness and contrast)</li>
+            <li>Gaussian blur</li>
+        </ul>
+
+        <h5>Custom CNN Preprocessing</h5>
+        <p>
+            For the custom CNN, the dataset statistics (mean and standard deviation) are computed directly from
+            the training images using <code>get_image_means_stds</code>. These values are then used to normalize
+            each input image, which helps stabilize training by putting all channels on a similar scale.
+        </p>
+
+        <h5>ResNet-50 Preprocessing</h5>
+        <p>
+            For the transfer learning setup with ResNet-50, the images are normalized using the standard
+            ImageNet statistics (<code>mean = [0.485, 0.456, 0.406]</code>,
+            <code>std = [0.229, 0.224, 0.225]</code>). This matches the preprocessing used when ResNet-50 was
+            originally trained on ImageNet, allowing the pretrained weights to transfer effectively to the
+            distracted driving task.
+        </p>
+
+        <h4>Model Architectures</h4>
+
+        <h5>Custom CNN</h5>
+        <p>
+            The custom CNN is a relatively lightweight architecture built from four convolutional layers with
+            batch normalization and max pooling, followed by an adaptive average pooling layer and three fully
+            connected layers. The convolutional layers extract increasingly abstract spatial features from the
+            input images, and the fully connected layers map these features to the 6 driver behavior classes.
+        </p>
+        <div class="cnn-architecture">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Layer (type)</th>
+                        <th>Output Shape</th>
+                        <th>Param #</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Conv2d-1</td>
+                        <td>[-1, 32, 224, 224]</td>
+                        <td>896</td>
+                    </tr>
+                    <tr>
+                        <td>BatchNorm2d-2</td>
+                        <td>[-1, 32, 224, 224]</td>
+                        <td>64</td>
+                    </tr>
+                    <tr>
+                        <td>Conv2d-3</td>
+                        <td>[-1, 64, 224, 224]</td>
+                        <td>18,496</td>
+                    </tr>
+                    <tr>
+                        <td>BatchNorm2d-4</td>
+                        <td>[-1, 64, 224, 224]</td>
+                        <td>128</td>
+                    </tr>
+                    <tr>
+                        <td>MaxPool2d-5</td>
+                        <td>[-1, 64, 112, 112]</td>
+                        <td>0</td>
+                    </tr>
+                    <tr>
+                        <td>Conv2d-6</td>
+                        <td>[-1, 128, 112, 112]</td>
+                        <td>73,856</td>
+                    </tr>
+                    <tr>
+                        <td>BatchNorm2d-7</td>
+                        <td>[-1, 128, 112, 112]</td>
+                        <td>256</td>
+                    </tr>
+                    <tr>
+                        <td>Conv2d-8</td>
+                        <td>[-1, 128, 112, 112]</td>
+                        <td>147,584</td>
+                    </tr>
+                    <tr>
+                        <td>BatchNorm2d-9</td>
+                        <td>[-1, 128, 112, 112]</td>
+                        <td>256</td>
+                    </tr>
+                    <tr>
+                        <td>MaxPool2d-10</td>
+                        <td>[-1, 128, 56, 56]</td>
+                        <td>0</td>
+                    </tr>
+                    <tr>
+                        <td>AdaptiveAvgPool2d-11</td>
+                        <td>[-1, 128, 14, 14]</td>
+                        <td>0</td>
+                    </tr>
+                    <tr>
+                        <td>Linear-12</td>
+                        <td>[-1, 512]</td>
+                        <td>12,845,568</td>
+                    </tr>
+                    <tr>
+                        <td>Linear-13</td>
+                        <td>[-1, 128]</td>
+                        <td>65,664</td>
+                    </tr>
+                    <tr>
+                        <td>Linear-14</td>
+                        <td>[-1, 6]</td>
+                        <td>774</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p><strong>Total params:</strong> 13,153,542</p>
+            <p><strong>Trainable params:</strong> 13,153,542</p>
+            <p><strong>Non-trainable params:</strong> 0</p>
+            <p><strong>Input size (MB):</strong> 0.57</p>
+            <p><strong>Forward/backward pass size (MB):</strong> 131.88</p>
+            <p><strong>Params size (MB):</strong> 50.18</p>
+            <p><strong>Estimated total size (MB):</strong> 182.63</p>
+        </div>
+
+        <h5>ResNet-50 (Transfer Learning)</h5>
+        <p>
+            The second model is based on a ResNet-50 architecture pretrained on ImageNet. The original
+            final fully connected (FC) layer is replaced with a new <code>nn.Linear</code> layer that
+            outputs 6 logits, one for each driver behavior class. To adapt the model to this task while
+            preserving most of the pretrained features, only the deepest residual block (<code>layer4</code>)
+            and the final FC layer are allowed to update during training; all earlier layers are frozen.
+        </p>
+        <p>
+            This fine-tuning strategy allows ResNet-50 to reuse its low-level and mid-level features
+            (edges, textures, shapes) from ImageNet, while the high-level features in <code>layer4</code>
+            and the classifier are updated to specialize in distracted driving detection.
+        </p>
+
+        <div class="cnn-architecture">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Layer (type)</th>
+                        <th>Output Shape</th>
+                        <th>Param #</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Conv2d-1</td><td>[-1, 64, 112, 112]</td><td>9,408</td></tr>
+                    <tr><td>BatchNorm2d-2</td><td>[-1, 64, 112, 112]</td><td>128</td></tr>
+                    <tr><td>ReLU-3</td><td>[-1, 64, 112, 112]</td><td>0</td></tr>
+                    <tr><td>MaxPool2d-4</td><td>[-1, 64, 56, 56]</td><td>0</td></tr>
+                    <tr><td>...</td><td>...</td><td>...</td></tr>
+                    <tr><td>AdaptiveAvgPool2d-173</td><td>[-1, 2048, 1, 1]</td><td>0</td></tr>
+                    <tr><td>Linear-174</td><td>[-1, 6]</td><td>12,294</td></tr>
+                    <tr><td>ResNet-175</td><td>[-1, 6]</td><td>0</td></tr>
+                </tbody>
+            </table>
+            <p><strong>Total params:</strong> 23,520,326</p>
+            <p><strong>Trainable params:</strong> 14,977,030</p>
+            <p><strong>Non-trainable params:</strong> 8,543,296</p>
+            <p><strong>Input size (MB):</strong> 0.57</p>
+            <p><strong>Forward/backward pass size (MB):</strong> 286.55</p>
+            <p><strong>Params size (MB):</strong> 89.72</p>
+            <p><strong>Estimated total size (MB):</strong> 376.85</p>
+        </div>
+
+        <h4>Training</h4>
+
+        <h5>Custom CNN Training</h5>
+        <p>
+            The custom CNN is trained from scratch using mini-batches of size <code>16</code> for
+            <code>20</code> epochs. At each iteration, a batch of normalized images is passed through
+            the network, the cross-entropy loss (with <code>label_smoothing = 0.05</code>) is computed,
+            and the gradients are backpropagated. The optimizer is stochastic gradient descent (SGD)
+            with a learning rate of <code>0.001</code>, momentum <code>0.9</code>, and weight decay
+            <code>1e-4</code>, which helps the model converge while reducing overfitting.
+        </p>
+        <p>
+            Data loading is parallelized with <code>num_workers = 4</code>, and each epoch corresponds
+            to a full pass through the training set. Training and validation losses and accuracies are
+            recorded so that the learning curves can be visualized after training.
+        </p>
+
+        <h5>ResNet-50 Training</h5>
+        <p>
+            The modified ResNet-50 model is trained using transfer learning. The network is initialized
+            with ImageNet-pretrained weights, and only the parameters in <code>layer4</code> and the
+            final <code>fc</code> layer are updated. Training also runs for <code>20</code> epochs with
+            mini-batches of size <code>16</code>, but the optimization setup differs from the custom CNN.
+        </p>
+        <p>
+            An Adam optimizer is used with separate learning rates: a slightly higher rate for the new
+            fully connected layer and a smaller rate for <code>layer4</code>. This allows the new
+            classifier to adapt quickly while making more conservative updates to the pretrained
+            convolutional features. A smaller amount of label smoothing is applied than in the custom CNN,
+            reflecting the fact that ResNet-50 starts from a strong pretrained representation.
+        </p>
+
+        <h4>Evaluation</h4>
+        <p>
+            After each training epoch, both models are evaluated on a separate validation set without
+            updating any weights. The models are switched to evaluation mode, and metrics such as
+            accuracy, precision, recall, and F1-score (macro-averaged across the 6 classes) are computed,
+            along with the validation loss.
+        </p>
+        <p>
+            These validation metrics are used to monitor for overfitting: if training accuracy continues
+            to improve while validation accuracy or F1-score stagnates or decreases, the model is likely
+            memorizing the training data. The model checkpoint that achieves the best validation
+            accuracy is saved to disk and treated as the “best” version for later testing.
+        </p>
+
+        <h4>Testing</h4>
+        <p>
+            Once training is complete, the best-performing checkpoint for each model (based on validation
+            accuracy) is evaluated on a held-out test set that was never used during training or validation.
+            This final evaluation provides an unbiased estimate of how well each model can classify driver
+            behavior in real-world scenarios.
+        </p>
+        <p>
+            The same metrics accuracy, precision, recall, and F1-score are reported on the test set,
+            allowing a direct comparison between the performance of the custom CNN and the transfer-learning
+            ResNet-50 model.
+        </p>
+
         <h3>Landmarks and Optical Flow Analysis</h3>
         <p>
             As an alternative to a pure deep learning procedure, we implement a motion-based approach using optical flow to detect movements using
