@@ -732,7 +732,7 @@
 
         <h5>Deep Learning Real-World Testing</h5>
         <p>
-            Real world testing was conducted using pre recorded video input we also used for optical flow rather than the curated dataset
+            Real world testing was conducted using pre recorded video input we also used for Optical Flow rather than the curated dataset
             used during training. This evaluation revealed significant differences between the two
             models and highlighted the challenges of deployment outside of a controlled training
             environment.
@@ -752,7 +752,7 @@
                     alt="Custom CNN real-world misclassification" style="width:400px; height:auto;">
                 <figcaption>
                     Example frame showing the custom CNN incorrectly classifying safe driving behavior
-                    as dangerous during real-world testing
+                    as dangerous during real-world testing.
                 </figcaption>
             </figure>
         </div>
@@ -768,48 +768,8 @@
             However, the ResNet model struggled to accurately classify <em>Sleepy Driving</em> and
             showed confusion between visually similar behaviors. In several cases, drinking behavior
             was misclassified as <em>Sleepy Driving</em>, and some distracted driving instances were partially
-            recognized but assigned incorrect labels.
+            recognized but assigned incorrect labels as seen below in the <a href="#qual-results">Qualitative Results</a> section.
         </p>
-        <div class="image-grid">
-            <figure>
-                <img src="./static/Deep_Learning/Results/Resnet_SafeDriving.png" alt="ResNet correctly classifying safe driving">
-                <figcaption>
-                    <strong>Safe Driving &rarr; SafeDriving</strong><br>
-                    Example where ResNet correctly classifies an obvious safe driving frame
-                </figcaption>
-            </figure>
-
-            <figure>
-                <img src="./static/Deep_Learning/Results/Resnet_SafeDriving_When_Sleeping.png" alt="ResNet failing to classify sleepy driving">
-                <figcaption>
-                    <strong>Sleepy Driving &rarr; Safe Driving</strong><br>
-                    The model fails to detect sleepy driving correctly
-                </figcaption>
-            </figure>
-
-            <figure>
-                <img src="./static/Deep_Learning/Results/Resnet_DangerousDriving.png" alt="ResNet correctly classifying dangerous driving">
-                <figcaption>
-                    <strong>Dangerous &rarr; Dangerous</strong><br>
-                    Example where ResNet correctly identifies a dangerous driving behavior
-                </figcaption>
-            </figure>
-
-            <figure>
-                <img src="./static/Deep_Learning/Results/Resnet_SleepyDriving_When_Drinking.png" alt="ResNet classifying drinking as sleeping">
-                <figcaption>
-                    <strong>Drinking &rarr; Sleeping</strong><br>
-                    The model confuses drinking with sleeping
-                </figcaption>
-            </figure>
-            <figure>
-                <img src="./static/Deep_Learning/Results/Drinking_Live.png" alt="ResNet classifying drinking as drinking">
-                <figcaption>
-                    <strong>Drinking &rarr; Drinking</strong><br>
-                    The model correctly classifying drinking this time in a different enviroment.
-                </figcaption>
-            </figure>
-        </div>
         <p>
             A major contributing factor to these failures is the difference between the training data
             and the real world camera setup. The dataset images were captured using an infrared (IR)
@@ -950,8 +910,54 @@
     <section class="section" id="qual-results">
         <h2>Qualitative Results</h2>
         <h3>Deep Learning</h3>
+        <h3>Deep Learning</h3>
         <p>
-            The full video that these frames have come from can be viewed here:
+            As discussed in the experiments and results section, the ResNet-50 model was able to detect some distracted driving behavoirs but completently failed on others or misclassified them.
+            Below are some example frames from the real world testing along with the model's prediction.
+        </p>
+        <div class="image-grid">
+            <figure>
+                <img src="./static/Deep_Learning/Results/Resnet_SafeDriving.png" alt="ResNet correctly classifying safe driving">
+                <figcaption>
+                    <strong>Safe Driving &rarr; SafeDriving</strong><br>
+                    Example where ResNet correctly classifies an obvious safe driving frame.
+                </figcaption>
+            </figure>
+
+            <figure>
+                <img src="./static/Deep_Learning/Results/Resnet_SafeDriving_When_Sleeping.png" alt="ResNet failing to classify sleepy driving">
+                <figcaption>
+                    <strong>Sleepy Driving &rarr; Safe Driving</strong><br>
+                    The model fails to detect sleepy driving correctly.
+                </figcaption>
+            </figure>
+
+            <figure>
+                <img src="./static/Deep_Learning/Results/Resnet_DangerousDriving.png" alt="ResNet correctly classifying dangerous driving">
+                <figcaption>
+                    <strong>Dangerous &rarr; Dangerous</strong><br>
+                    Example where ResNet correctly identifies a dangerous driving behavior.
+                </figcaption>
+            </figure>
+
+            <figure>
+                <img src="./static/Deep_Learning/Results/Resnet_SleepyDriving_When_Drinking.png" alt="ResNet classifying drinking as sleeping">
+                <figcaption>
+                    <strong>Drinking &rarr; Sleeping</strong><br>
+                    The model confuses drinking with sleeping.
+                </figcaption>
+            </figure>
+            <figure>
+                <img src="./static/Deep_Learning/Results/Drinking_Live.png" alt="ResNet classifying drinking as drinking">
+                <figcaption>
+                    <strong>Drinking &rarr; Drinking</strong><br>
+                    The model correctly classifying drinking this time in a different enviroment.
+                </figcaption>
+            </figure>
+        </div>
+
+        <p>
+            The full videos using the deep learning methods are below:
         </p>
         <div class="videos-wrapper">
             <div class="video-container">
