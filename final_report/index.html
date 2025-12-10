@@ -929,8 +929,12 @@
         </p>
         <h3>Final Assessment</h3>
         <p>
-            Ultimately, the approach that made use of landmarks and optical flow was a far more reliable method, giving much better live results, as well as being suitable to any
-            type of camera that is used. The deep learning approach returned excellent accuracy scores, but struggled on a new custom example, as well as when testing live.
+            Deep learning approaches, particularly ResNet-50 with transfer learning, are very strong with high-accuracy driver state classification when trained and tested with
+            consistent conditions. However, these models performed poorly on live examples, possibly due to their sensitivity to camera and lighting conditions. 
+            With optical flow and landmarks, though less sophisticated, we saw a robust and interpretable model, making them more suitable for immediate real-world deployment.
+            Ultimately, this approach was a far more reliable method, giving much better live results, as well as being suitable to any
+            type of camera that is used, despite the need for calibration of thresholds. The deep learning approach returned excellent accuracy scores, but struggled 
+            on new custom examples, as well as when testing live.
         </p>
     </section>
 
