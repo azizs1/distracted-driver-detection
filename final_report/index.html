@@ -1055,6 +1055,15 @@
 
     <section class="section" id="conclusion">
         <h2>Conclusion</h2>
+        <p>
+            Throughout this project, we have explored two different approaches to detecting distracted driving: deep learning based methods and optical flow with
+            facial landmarks. While the deep learning methods returned high accuracy on datasets (~96%), they struggled to generalize and perform on custom videos
+            in real-world conditions with different lighting and camera setups. Improving this approach would likely consist of creating our own data to add on to
+            what is already present to provide more variety with more camera options. Optical flow with the use of landmarks gave much better results on live
+            examples, proving to be the more robust option between these two approaches. This method was simple and ran smoothly in a live case, but had many thresholds
+            that had to be tuned. In order to make this process better, calibrating it per camera setup to set thresholds live would return a much better result to account
+            for camera positioning and the driver's face relative to the camera.
+        </p>
     </section>
     
     <section class="section" id="references">
