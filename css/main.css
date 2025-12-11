@@ -77,3 +77,16 @@ body {
     background-color: #3498db;
     color: #fff;
 }
+
+.video-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.video-container video {
+  max-height: 300px;
+  width: auto;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+}
